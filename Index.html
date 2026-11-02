@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PDI Escavador</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&display=swap">
+<style>
+/* Layout (padrão portal Smart): barra lateral branca com itens em lista, cabeçalho fino com menu e avatar, conteúdo centralizado em cards brancos bem arredondados. */
+:root{
+  --bg:#FAFAFA; --surface:#FFFFFF; --surface-2:#FAFAFB; --line:#ECECEE; --line-2:#F2F2F4;
+  --ink:#121316; --ink-2:#4B4F57; --ink-3:#8A8F98;
+  --pri:#121316; --pri-ink:#FFFFFF; --hover:#F4F4F5;
+  --green:#5DB075; --green-soft:#EAF6EE; --blue:#5B7CF5; --blue-soft:#EEF1FE; --purple:#8E63D8; --purple-soft:#F3EEFC;
+  --orange:#D9952B; --orange-soft:#FDF4E6; --red:#E5484D; --red-soft:#FDECEC; --gray:#9AA0A8; --gray-soft:#F1F2F4;
+  --ok:var(--green); --ok-soft:var(--green-soft); --warn:var(--orange); --warn-soft:var(--orange-soft); --bad:var(--red); --bad-soft:var(--red-soft);
+  --info:var(--blue); --info-soft:var(--blue-soft); --muted:#6B7079; --muted-soft:var(--gray-soft);
+  --shadow:0 1px 2px rgba(17,18,22,.04);
+  --font:"Lexend",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --r:16px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#111214; --surface:#1A1B1F; --surface-2:#1F2125; --line:#2C2E33; --line-2:#25272B;
+  --ink:#F2F3F5; --ink-2:#C3C6CC; --ink-3:#8E939B; --pri:#F2F3F5; --pri-ink:#111214; --hover:#24262A;
+  --green-soft:#17301F; --blue-soft:#1A2242; --purple-soft:#2A1F3D; --orange-soft:#33260F; --red-soft:#3A1B1C; --gray-soft:#26282C; --muted:#A3A8B0;
+  --shadow:none; color-scheme:dark; } }
+:root[data-theme="dark"]{
+  --bg:#111214; --surface:#1A1B1F; --surface-2:#1F2125; --line:#2C2E33; --line-2:#25272B;
+  --ink:#F2F3F5; --ink-2:#C3C6CC; --ink-3:#8E939B; --pri:#F2F3F5; --pri-ink:#111214; --hover:#24262A;
+  --green-soft:#17301F; --blue-soft:#1A2242; --purple-soft:#2A1F3D; --orange-soft:#33260F; --red-soft:#3A1B1C; --gray-soft:#26282C; --muted:#A3A8B0;
+  --shadow:none; color-scheme:dark; }
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:13.5px/1.55 var(--font);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{text-wrap:balance;margin:0;line-height:1.25;font-weight:700}
+.num{font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+/* ---------- casca ---------- */
+.app{display:grid;grid-template-columns:184px minmax(0,1fr);min-height:100%}
+.app.collapsed{grid-template-columns:0 minmax(0,1fr)}
+.app.collapsed .side{visibility:hidden}
+.side{background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow:auto;min-width:0}
+.brand{display:flex;align-items:center;gap:6px;padding:0 10px;height:52px;flex:none}
+.brand svg{width:20px;height:24px;flex:none}
+.brand b{font-size:15.5px;font-weight:600;letter-spacing:-.01em}
+.brand small{font-size:10.5px;color:var(--ink-3);border:1px solid var(--line);border-radius:6px;padding:0 6px;margin-left:4px;font-weight:600}
+.nav{display:flex;flex-direction:column;border-top:1px solid var(--line-2)}
+.nav-label{display:none}
+.nav button{all:unset;cursor:pointer;display:flex;align-items:center;gap:8px;padding:0 10px;height:34px;border-bottom:1px solid var(--line-2);font-size:12px;color:var(--ink)}
+.nav button:hover{background:var(--hover)}
+.nav button.on{background:var(--hover);font-weight:600}
+.nav button:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+.nav .ic{width:15px;height:15px;flex:none}
+.nav .badge{margin-left:auto;background:var(--red);color:#fff;border-radius:999px;font-size:10.5px;padding:0 6px;line-height:16px;font-weight:700}
+.scrim{display:none}
+
+.main{min-width:0;display:flex;flex-direction:column}
+.topbar{height:52px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);background:var(--surface);padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));position:sticky;top:0;z-index:15}
+.icon-btn{width:30px;height:30px;border:1px solid var(--line);border-radius:8px;background:var(--surface);display:grid;place-items:center;cursor:pointer;color:var(--ink)}
+.icon-btn:hover{background:var(--hover)}
+.topbar .sp{flex:1}
+.me{display:flex;align-items:center;gap:8px;min-width:0}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--orange-soft);color:var(--orange);display:grid;place-items:center;font-weight:700;font-size:11.5px;flex:none;border:1px solid var(--line)}
+.me div{min-width:0;line-height:1.2}
+.me b{display:block;font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.me small{color:var(--ink-3);font-size:11px;white-space:nowrap}
+.demo{background:var(--orange-soft);color:var(--ink);padding-block:7px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:center;font-size:12px;border-bottom:1px solid var(--line)}
+.demo select{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:3px 8px;font-weight:600}
+.demo button{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:3px 10px;cursor:pointer}
+.wrap{width:100%;max-width:1080px;margin:0 auto;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px))}
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;padding-block:32px 10px}
+.top h1{font-size:28px;letter-spacing:-.02em}
+.top p{margin:8px 0 0;color:var(--ink-3);font-size:14.5px;max-width:42ch}
+.tiles{display:flex;gap:12px;flex-wrap:wrap}
+.tile{all:unset;cursor:pointer;width:156px;min-height:96px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 2px 8px rgba(17,18,22,.04);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-weight:600;font-size:12.5px;text-align:center;padding:12px}
+.tile:hover{border-color:var(--ink-3)}
+.tile:focus-visible{outline:2px solid var(--blue)}
+.ico{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;flex:none}
+.ico svg{width:19px;height:19px}
+.ico.green{background:var(--green-soft);color:var(--green)} .ico.red{background:var(--red-soft);color:var(--red)} .ico.blue{background:var(--blue-soft);color:var(--blue)}
+.ico.purple{background:var(--purple-soft);color:var(--purple)} .ico.orange{background:var(--orange-soft);color:var(--orange)} .ico.gray{background:var(--gray-soft);color:var(--muted)}
+.build-row{display:flex;justify-content:flex-end}
+.build{font:10.5px var(--mono);color:var(--ink-3);border:1px solid var(--line);border-radius:8px;padding:3px 8px;background:var(--surface)}
+.content{padding-block:12px 56px;display:flex;flex-direction:column;gap:18px}
+
+/* ---------- blocos ---------- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 2px 10px rgba(17,18,22,.035)}
+.sec{padding:24px 26px;display:flex;flex-direction:column;gap:16px}
+.sec-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.sec-h h2{font-size:16px}
+.sec-h .n{width:26px;height:26px;border-radius:8px;background:var(--gray-soft);color:var(--ink-2);display:grid;place-items:center;font-weight:700;font-size:12px;flex:none}
+.sec-h .sp{flex:1}
+.sec-h p{margin:0;color:var(--ink-3);font-size:12.5px;flex-basis:100%;max-width:80ch}
+.eyebrow{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);font-weight:600;display:flex;align-items:center;gap:6px}
+.hint{color:var(--ink-3);font-size:12px}
+.empty-txt{color:var(--ink-3);font-style:italic}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:7px 12px;font-weight:600;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--hover)}
+.btn.pri,.btn.dark{background:var(--pri);border-color:var(--pri);color:var(--pri-ink)}
+.btn.pri:hover,.btn.dark:hover{opacity:.88;background:var(--pri)}
+.btn.ok{background:var(--green);border-color:var(--green);color:#fff}
+.btn.ok:hover{background:var(--green);opacity:.9}
+.btn.bad{border-color:var(--red);color:var(--red)}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--ink-2)}
+.btn.sm{padding:5px 10px;font-size:12px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:2px 10px;font-size:11.5px;font-weight:600;white-space:nowrap;background:var(--gray-soft);color:var(--muted)}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.pill.ok{background:var(--green-soft);color:var(--green)} .pill.warn{background:var(--orange-soft);color:var(--orange)}
+.pill.bad{background:var(--red-soft);color:var(--red)} .pill.info{background:var(--purple-soft);color:var(--purple)}
+.pill.blue{background:var(--blue-soft);color:var(--blue)}
+.chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:8px;padding:1px 8px;font-size:11px;color:var(--ink-2);background:var(--surface-2);white-space:nowrap}
+.tag-late{color:var(--red);font-weight:700;font-size:12px}
+
+.bar{height:7px;border-radius:99px;background:var(--gray-soft);overflow:hidden;min-width:60px}
+.bar i{display:block;height:100%;background:var(--blue);border-radius:99px}
+.bar.ok i{background:var(--green)}
+.prog{display:flex;align-items:center;gap:8px}
+.prog .bar{flex:1}
+.prog span{font-size:11.5px;color:var(--ink-2);width:34px;text-align:right}
+
+.callout{border-radius:12px;padding:12px 16px;display:flex;gap:10px;align-items:flex-start;font-size:13px;flex-wrap:wrap}
+.callout b{font-weight:700}
+.callout.bad{background:var(--red-soft)} .callout.warn{background:var(--orange-soft)} .callout.info{background:var(--blue-soft)} .callout.ok{background:var(--green-soft)}
+.callout .sp{flex:1;min-width:200px}
+.callout .row{margin-left:auto}
+
+/* cabeçalho do PDI (formato do card "Pagamento mais recente") */
+.pdi-head{padding:24px 26px;display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:20px;align-items:end}
+.pdi-head h2{font-size:17px;margin:6px 0 14px}
+.pdi-head .big-title{font-size:26px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.meta{display:flex;flex-wrap:wrap;gap:4px 14px;color:var(--ink-3);font-size:12px;margin-top:6px}
+.meta b{font-weight:500}
+.big-prog{display:flex;flex-direction:column;gap:8px;align-items:stretch}
+.big-prog .v{font-size:30px;font-weight:700;letter-spacing:-.02em;line-height:1;text-align:right}
+.big-prog .v small{font-size:12px;font-weight:500;color:var(--ink-3);margin-left:4px;letter-spacing:0}
+.big-prog .hint{text-align:right}
+.big-prog .row{justify-content:flex-end}
+.pdi-foot{grid-column:1/-1;border-top:1px solid var(--line-2);padding-top:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* campos */
+.dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px 20px;margin:0}
+.dl div{min-width:0}
+.dl dt{font-size:10.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.dl dd{margin:3px 0 0;font-weight:600;overflow-wrap:anywhere}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.two>*{min-width:0}
+.col-h{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:600;color:var(--ink-2);display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.col-h::before{content:"";width:22px;height:22px;border-radius:7px;background:var(--green-soft) radial-gradient(circle,var(--green) 3px,transparent 3.5px)}
+.col-h.dev::before{background:var(--blue-soft) radial-gradient(circle,var(--blue) 3px,transparent 3.5px)}
+.items{display:flex;flex-direction:column;gap:10px}
+.item{border:1px solid var(--line);background:var(--surface-2);border-radius:12px;padding:12px 14px}
+.item b{display:block;font-size:13.5px}
+.item p{margin:3px 0 0;color:var(--ink-2);font-size:12.5px;white-space:pre-wrap}
+.item .lbl{font-size:10px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.obj{border:1px solid var(--line);background:var(--surface-2);border-radius:12px;padding:12px 14px}
+.obj b{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.obj p{margin:4px 0 0;white-space:pre-wrap}
+
+/* ações */
+.acoes{display:flex;flex-direction:column;gap:12px}
+.acao{border:1px solid var(--line);border-radius:14px;background:var(--surface);overflow:hidden}
+.acao.st-Pendente{border-color:color-mix(in srgb,var(--orange) 45%,var(--line))}
+.acao.st-Reprovado{border-color:color-mix(in srgb,var(--red) 45%,var(--line))}
+.acao-h{display:flex;gap:10px;align-items:flex-start;padding:16px 18px 0;flex-wrap:wrap}
+.acao-h h3{font-size:14.5px;flex:1;min-width:200px}
+.acao-b{padding:10px 18px 14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px 18px}
+.acao-b div{min-width:0}
+.acao-b .lbl{font-size:10px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.acao-b p{margin:2px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.acao-f{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 18px;border-top:1px solid var(--line-2);background:var(--surface-2)}
+.acao-f .prog{flex:1;min-width:180px}
+.acao .callout{margin:0 18px 12px}
+.counts{display:flex;gap:6px;flex-wrap:wrap}
+
+/* KPIs (formato dos cards de benefício) e tabelas */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.kpi{padding:14px 16px;display:flex;flex-direction:column;gap:4px;border-radius:14px;--c:var(--muted);--cs:var(--gray-soft)}
+.kpi .l{font-size:10.5px;color:var(--ink-2);font-weight:600;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:8px;line-height:1.3}
+.kpi .l::before{content:"";width:24px;height:24px;border-radius:8px;flex:none;background:var(--cs) radial-gradient(circle,var(--c) 3.5px,transparent 4px)}
+.kpi .v{font-size:22px;font-weight:700;letter-spacing:-.01em;line-height:1.2;margin-top:6px}
+.kpi .s{font-size:11.5px;color:var(--c)}
+.kpi.k-brand{--c:var(--purple);--cs:var(--purple-soft)} .kpi.k-ok{--c:var(--green);--cs:var(--green-soft)} .kpi.k-warn{--c:var(--orange);--cs:var(--orange-soft)}
+.kpi.k-bad{--c:var(--red);--cs:var(--red-soft)} .kpi.k-info{--c:var(--blue);--cs:var(--blue-soft)}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th{text-align:left;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);font-weight:600;background:var(--surface-2);padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid var(--line-2);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+tbody tr.click{cursor:pointer} tbody tr.click:hover td{background:var(--hover)}
+td .sub{display:block;color:var(--ink-3);font-size:11.5px}
+td.r,th.r{text-align:right}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filters input,.filters select{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 10px;min-width:0}
+.filters input{flex:1 1 200px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface);flex-wrap:wrap;padding:3px;gap:2px}
+.seg button{all:unset;cursor:pointer;padding:5px 12px;font-size:12px;font-weight:600;color:var(--ink-2);border-radius:7px}
+.seg button.on{background:var(--pri);color:var(--pri-ink)}
+.seg button:focus-visible{outline:2px solid var(--blue)}
+/* rosca de status (painel RH) */
+.dist{display:grid;grid-template-columns:220px minmax(0,1fr);gap:24px;align-items:center}
+.donut{width:200px;height:200px;border-radius:50%;position:relative;margin:0 auto}
+.donut::after{content:"";position:absolute;inset:40px;border-radius:50%;background:var(--surface)}
+.donut .c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1}
+.donut .c small{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.donut .c b{font-size:22px}
+.dist-cap{text-align:center;color:var(--ink-2);font-size:12px;margin-top:10px}
+.legend-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.lt{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--surface-2)}
+.lt .l{font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2);font-weight:600;display:flex;gap:8px;align-items:center;line-height:1.3}
+.lt .l i{width:22px;height:22px;border-radius:7px;flex:none}
+.lt b{display:block;font-size:20px;margin-top:6px}
+.lt span{font-size:11.5px}
+
+/* importar */
+.drop{border:1.5px dashed var(--line);border-radius:14px;padding:28px 18px;text-align:center;background:var(--surface-2);cursor:pointer;display:flex;flex-direction:column;gap:8px;align-items:center}
+.drop:hover,.drop.over{border-color:var(--blue);background:var(--blue-soft)}
+.drop b{font-size:14px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.steps div{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--surface-2);font-size:12.5px;color:var(--ink-2)}
+.steps div b{display:block;color:var(--ink);margin-bottom:2px}
+
+/* modal e toast */
+.ov{position:fixed;inset:0;background:rgba(17,18,22,.38);display:flex;align-items:flex-start;justify-content:center;padding:max(28px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 24px max(12px,env(safe-area-inset-left,0px));z-index:50;overflow:auto}
+.modal{background:var(--surface);border:1px solid var(--line);border-radius:18px;width:min(620px,100%);box-shadow:0 24px 60px rgba(0,0,0,.18);display:flex;flex-direction:column}
+.modal-h{padding:18px 22px;border-bottom:1px solid var(--line-2);display:flex;align-items:center;gap:10px}
+.modal-h h3{font-size:16px;flex:1}
+.modal-b{padding:18px 22px;display:flex;flex-direction:column;gap:12px}
+.modal-f{padding:14px 22px;border-top:1px solid var(--line-2);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.f{display:flex;flex-direction:column;gap:5px;min-width:0}
+.f label{font-size:12px;font-weight:600;color:var(--ink-2)}
+.f small{color:var(--ink-3);font-size:11.5px}
+.f input,.f select,.f textarea{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 11px;width:100%}
+.f textarea{min-height:70px;resize:vertical}
+.f input[type=range]{padding:0;border:0;accent-color:var(--pri)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid2>*{min-width:0}
+.fs{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;margin:0}
+.fs legend{font-size:11px;font-weight:600;padding:0 4px;color:var(--ink-2);text-transform:uppercase;letter-spacing:.05em}
+.quick{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.quick button{border:1px solid var(--line);background:var(--surface-2);border-radius:99px;padding:2px 10px;font-size:11.5px;cursor:pointer}
+.quick button:hover{border-color:var(--ink-3)}
+.toast{position:fixed;right:max(18px,env(safe-area-inset-right,0px));bottom:max(18px,env(safe-area-inset-bottom,0px));background:var(--pri);color:var(--pri-ink);padding:10px 16px;border-radius:12px;font-weight:600;z-index:60;box-shadow:0 8px 30px rgba(0,0,0,.2);max-width:min(420px,calc(100vw - 36px))}
+.toast.err{background:var(--red);color:#fff}
+.loading{padding:40px;text-align:center;color:var(--ink-3)}
+.timeline{display:flex;flex-direction:column;margin:0;padding:0;list-style:none}
+.timeline li{display:grid;grid-template-columns:118px minmax(0,1fr);gap:12px;padding:9px 0;border-bottom:1px solid var(--line-2);font-size:12.5px}
+.timeline li:last-child{border-bottom:0}
+.timeline time{color:var(--ink-3);font-size:11.5px}
+.timeline p{margin:0;color:var(--ink-2);overflow-wrap:anywhere}
+details.card>summary{cursor:pointer;padding:16px 26px;font-weight:700;list-style:none;display:flex;gap:8px;align-items:center}
+details.card>summary::-webkit-details-marker{display:none}
+details.card>summary::before{content:"▸";color:var(--ink-3)}
+details[open].card>summary::before{content:"▾"}
+details.card .inner{padding:0 26px 16px}
+.empty{padding:30px 26px;display:flex;flex-direction:column;gap:14px;align-items:flex-start}
+.empty h2{font-size:20px}
+.empty p{margin:0;color:var(--ink-2);max-width:62ch}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;width:100%}
+.opt{border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px;background:var(--surface-2);align-items:flex-start}
+.opt b{font-size:14.5px}
+.opt p{font-size:12.5px;margin:0}
+
+@media (max-width:900px){
+  .app,.app.collapsed{grid-template-columns:minmax(0,1fr)}
+  .side{position:fixed;left:0;top:0;bottom:0;width:240px;z-index:40;transform:translateX(-100%);transition:transform .18s;visibility:visible!important;padding-top:env(safe-area-inset-top,0px);box-shadow:0 0 40px rgba(0,0,0,.15)}
+  .app.open .side{transform:none}
+  .app.open .scrim{display:block;position:fixed;inset:0;background:rgba(17,18,22,.3);z-index:30}
+  .main{min-width:0}
+  .pdi-head,.dist{grid-template-columns:1fr}
+  .big-prog .v,.big-prog .hint{text-align:left} .big-prog .row{justify-content:flex-start}
+  .two,.grid2{grid-template-columns:1fr}
+  .wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .top h1{font-size:24px}
+  .tile{width:calc(50% - 6px);min-width:0}
+  .tiles{width:100%}
+  .me div{display:none}
+  .timeline li{grid-template-columns:1fr;gap:2px}
+}
+@media (prefers-reduced-motion:reduce){ .side{transition:none} }
+@media (prefers-reduced-motion:no-preference){ .modal{animation:pop .14s ease-out} @keyframes pop{from{transform:translateY(6px);opacity:.6}to{transform:none;opacity:1}} }
+@media print{ .side,.topbar,.demo,.btn,.tiles{display:none!important} .app{display:block} }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <aside class="side" id="side">
+    <div class="brand"><svg viewBox="0 0 20 24" aria-hidden="true"><path d="M15.5 5.2C14.3 3.4 12.3 2.5 10 2.5 6.9 2.5 4.6 4.3 4.6 6.9c0 2.4 1.9 3.6 5.4 4.6" fill="none" stroke="#F0563F" stroke-width="3" stroke-linecap="round"/><path d="M10 11.5c3.6 1 5.6 2.3 5.6 4.9 0 2.8-2.5 4.9-5.8 4.9-2.5 0-4.6-1-5.8-2.9" fill="none" stroke="#3B6FE0" stroke-width="3" stroke-linecap="round"/></svg><b>smart</b><small>PDI</small></div>
+    <nav class="nav" id="nav" aria-label="Menu"></nav>
+  </aside>
+  <div class="scrim" data-act="tgl"></div>
+  <main class="main">
+    <div class="topbar"><button class="icon-btn" data-act="tgl" aria-label="Mostrar ou esconder o menu"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><span class="sp"></span><div class="me" id="meBox"></div></div>
+    <div class="demo" id="demoBar" hidden></div>
+    <div class="wrap">
+      <header class="top"><div><h1 id="tTitle">Carregando…</h1><p id="tSub"></p></div><div class="tiles" id="tTiles"></div></header>
+      <div class="build-row"><span class="build" id="build"></span></div>
+      <div class="content" id="view"><div class="loading">Carregando seu PDI…</div></div>
+    </div>
+  </main>
+</div>
+<div id="modalRoot"></div>
+
+<script>
+/* ===== Regras de negócio (cópia de Logica.gs — usada só no modo demonstração) ===== */
+/**
+ * PDI · Escavador — regras de negócio (puras, sem dependência do Apps Script).
+ * O MESMO código roda no servidor (Logica.gs) e no modo demonstração do Index.html.
+ * Cada função recebe (db, emailDoUsuario, ...args). db = { usuarios, pdis, auto, acoes, hist, _dirty }.
+ */
+var PDI = (function () {
+
+  var STATUS_ACAO = ['Não iniciado', 'Em andamento', 'Concluído', 'Cancelado'];
+  var APROVACAO = ['Rascunho', 'Pendente', 'Aprovado', 'Reprovado'];
+  var CAMPOS_NUCLEO = ['oque', 'como', 'suporte', 'inicio', 'prazo', 'indicador'];
+
+  // ---------- utilitários ----------
+  function low(s) { return String(s == null ? '' : s).trim().toLowerCase(); }
+  function str(s) { return s == null ? '' : String(s).trim(); }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function hoje() { var d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function agora() { var d = new Date(); return hoje() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+  function novoId(p) { return p + Date.now().toString(36).toUpperCase() + Math.floor(Math.random() * 1296).toString(36).toUpperCase(); }
+  function erro(msg) { throw new Error(msg); }
+  function sujo(db, t) { db._dirty = db._dirty || {}; db._dirty[t] = true; }
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function num(x) { var n = parseFloat(x); return isNaN(n) ? 0 : n; }
+
+  function usuario(db, email) { email = low(email); for (var i = 0; i < db.usuarios.length; i++) if (low(db.usuarios[i].email) === email) return db.usuarios[i]; return null; }
+  function ativo(u) { return u && low(u.ativo) !== 'não' && low(u.ativo) !== 'nao' && low(u.ativo) !== 'false'; }
+  function isRH(db, email) { var u = usuario(db, email); return !!u && low(u.perfil) === 'rh'; }
+  function liderados(db, email) { email = low(email); return db.usuarios.filter(function (u) { return low(u.gestor) === email && ativo(u); }); }
+  function isLider(db, email) { var u = usuario(db, email); return (!!u && low(u.perfil) === 'líder') || liderados(db, email).length > 0; }
+  function pdiDe(db, email) { email = low(email); for (var i = 0; i < db.pdis.length; i++) if (low(db.pdis[i].email) === email) return db.pdis[i]; return null; }
+  function pdiPorId(db, id) { for (var i = 0; i < db.pdis.length; i++) if (db.pdis[i].id === id) return db.pdis[i]; return null; }
+  function acoesDe(db, pdiId) { return db.acoes.filter(function (a) { return a.pdiId === pdiId; }); }
+  function acaoPorId(db, id) { for (var i = 0; i < db.acoes.length; i++) if (db.acoes[i].id === id) return db.acoes[i]; return null; }
+  function nomeDe(db, email) { var u = usuario(db, email); return u ? (u.nome || u.email) : (email || ''); }
+
+  function log(db, pdiId, acaoId, autor, evento, detalhe) {
+    db.hist.push({ data: agora(), pdiId: pdiId, acaoId: acaoId || '', autor: autor, evento: evento, detalhe: detalhe || '' });
+    sujo(db, 'hist');
+  }
+
+  function atrasada(a) { return !!a.prazo && a.prazo < hoje() && a.status !== 'Concluído' && a.status !== 'Cancelado'; }
+  function progressoAcao(a) { return a.status === 'Concluído' ? 100 : Math.max(0, Math.min(100, num(a.progresso))); }
+
+  // ---------- status consolidado ----------
+  function resumoPDI(db, p) {
+    var acs = acoesDe(db, p.id).filter(function (a) { return a.status !== 'Cancelado'; });
+    var r = { total: acs.length, concluidas: 0, atrasadas: 0, pendentes: 0, reprovadas: 0, rascunho: 0, aprovadas: 0, progresso: 0 };
+    var soma = 0;
+    acs.forEach(function (a) {
+      if (a.status === 'Concluído') r.concluidas++;
+      if (atrasada(a)) r.atrasadas++;
+      if (a.aprovacao === 'Pendente') r.pendentes++;
+      if (a.aprovacao === 'Reprovado') r.reprovadas++;
+      if (a.aprovacao === 'Rascunho') r.rascunho++;
+      if (a.aprovacao === 'Aprovado') r.aprovadas++;
+      soma += progressoAcao(a);
+    });
+    r.progresso = acs.length ? Math.round(soma / acs.length) : 0;
+    if (!acs.length) r.status = 'Em elaboração';
+    else if (r.concluidas === acs.length && r.aprovadas === acs.length) r.status = 'Concluído';
+    else if (r.reprovadas) r.status = 'Ajustes solicitados';
+    else if (r.pendentes) r.status = 'Aguardando aprovação';
+    else if (r.rascunho) r.status = 'Em elaboração';
+    else r.status = 'Em andamento';
+    return r;
+  }
+
+  function linhaResumo(db, u) {
+    var p = pdiDe(db, u.email);
+    var base = { email: u.email, nome: u.nome || u.email, cargo: u.cargo || '', area: u.area || 'Sem área', gestor: u.gestor || '', gestorNome: u.gestor ? nomeDe(db, u.gestor) : '—', perfil: u.perfil || 'Colaborador' };
+    if (!p) { base.temPDI = false; base.status = 'Sem PDI'; base.progresso = 0; base.total = 0; base.concluidas = 0; base.atrasadas = 0; base.pendentes = 0; base.reprovadas = 0; base.origem = ''; base.atualizadoEm = ''; base.fim = ''; return base; }
+    var r = resumoPDI(db, p);
+    for (var k in r) base[k] = r[k];
+    base.temPDI = true; base.origem = p.origem; base.atualizadoEm = p.atualizadoEm; base.fim = p.fim; base.inicio = p.inicio;
+    return base;
+  }
+
+  function pdiCompleto(db, email) {
+    var p = pdiDe(db, email);
+    if (!p) return null;
+    var out = clone(p);
+    var u = usuario(db, email) || {};
+    out.gestorNome = p.gestor ? nomeDe(db, p.gestor) : '';
+    out.area = u.area || '';
+    out.auto = db.auto.filter(function (x) { return x.pdiId === p.id; }).sort(function (a, b) { return (a.tipo + a.ordem) < (b.tipo + b.ordem) ? -1 : 1; });
+    out.acoes = acoesDe(db, p.id).map(function (a) { var c = clone(a); c.atrasada = atrasada(a); c.progresso = progressoAcao(a); c.avaliadoPorNome = a.avaliadoPor ? nomeDe(db, a.avaliadoPor) : ''; return c; });
+    out.hist = db.hist.filter(function (h) { return h.pdiId === p.id; }).slice(-40).reverse().map(function (h) { var c = clone(h); c.autorNome = nomeDe(db, h.autor); return c; });
+    out.resumo = resumoPDI(db, p);
+    return out;
+  }
+
+  function podeVer(db, me, email) {
+    if (low(me) === low(email)) return true;
+    if (isRH(db, me)) return true;
+    var u = usuario(db, email);
+    return !!u && low(u.gestor) === low(me);
+  }
+  function podeEditar(db, me, email) { return low(me) === low(email) || isRH(db, me); }
+
+  function garantirUsuario(db, me) {
+    var u = usuario(db, me);
+    if (!u) {
+      u = { email: low(me), nome: low(me).split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); }), cargo: '', area: '', gestor: '', perfil: 'Colaborador', ativo: 'Sim' };
+      db.usuarios.push(u); sujo(db, 'usuarios');
+    }
+    return u;
+  }
+
+  function criarPDI(db, email, autor, origem) {
+    var u = usuario(db, email) || {};
+    var ini = hoje(), d = new Date(); d.setFullYear(d.getFullYear() + 1);
+    var p = { id: novoId('P'), email: low(email), nome: u.nome || email, cargo: u.cargo || '', gestor: low(u.gestor || ''), inicio: ini, fim: d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()), curtoPrazo: '', medioPrazo: '', origem: origem || 'Ferramenta', criadoEm: agora(), atualizadoEm: agora(), enviadoEm: '' };
+    db.pdis.push(p); sujo(db, 'pdis');
+    log(db, p.id, '', autor, 'PDI criado', origem === 'Excel' ? 'a partir de planilha Excel' : 'na ferramenta');
+    return p;
+  }
+
+  function tocar(db, p) { p.atualizadoEm = agora(); sujo(db, 'pdis'); }
+
+  function normAcao(a) {
+    var st = STATUS_ACAO.indexOf(a.status) >= 0 ? a.status : 'Não iniciado';
+    return { oque: str(a.oque), como: str(a.como), suporte: str(a.suporte), inicio: str(a.inicio), prazo: str(a.prazo), prazoTexto: str(a.prazoTexto), indicador: str(a.indicador), status: st, progresso: st === 'Concluído' ? 100 : Math.max(0, Math.min(100, Math.round(num(a.progresso)))), obs: str(a.obs) };
+  }
+
+  // ================= API =================
+  var api = {};
+
+  api.contexto = function (db, me) {
+    var u = garantirUsuario(db, me);
+    return { me: clone(u), isRH: isRH(db, me), isLider: isLider(db, me), temPDI: !!pdiDe(db, me), liderados: liderados(db, me).length, hoje: hoje() };
+  };
+
+  api.verPDI = function (db, me, email) {
+    email = email || me;
+    if (!podeVer(db, me, email)) erro('Você não tem acesso a este PDI.');
+    var u = usuario(db, email);
+    return { pdi: pdiCompleto(db, email), pessoa: u ? clone(u) : { email: email, nome: email }, gestorNome: u && u.gestor ? nomeDe(db, u.gestor) : '' };
+  };
+
+  api.iniciarPDI = function (db, me, email) {
+    email = email || me;
+    if (!podeEditar(db, me, email)) erro('Somente o próprio colaborador ou o RH podem criar este PDI.');
+    if (!pdiDe(db, email)) criarPDI(db, email, me, 'Ferramenta');
+    return api.verPDI(db, me, email);
+  };
+
+  // Identificação + Autoavaliação + Objetivos (campos parciais são mesclados)
+  api.salvarCabecalho = function (db, me, dados) {
+    var email = dados.email || me;
+    if (!podeEditar(db, me, email)) erro('Somente o colaborador edita o próprio PDI.');
+    var p = pdiDe(db, email) || criarPDI(db, email, me, 'Ferramenta');
+    ['nome', 'cargo', 'inicio', 'fim', 'curtoPrazo', 'medioPrazo'].forEach(function (k) { if (dados[k] !== undefined) p[k] = str(dados[k]); });
+    if (dados.inicio && dados.fim && dados.fim < dados.inicio) erro('O fim da validade precisa ser depois da data de início.');
+    if (dados.auto) {
+      db.auto = db.auto.filter(function (x) { return x.pdiId !== p.id; });
+      dados.auto.forEach(function (x, i) {
+        if (!str(x.titulo) && !str(x.descricao)) return;
+        db.auto.push({ pdiId: p.id, tipo: x.tipo === 'Área de desenvolvimento' ? 'Área de desenvolvimento' : 'Ponto forte', ordem: String(x.ordem || i + 1), titulo: str(x.titulo), descricao: str(x.descricao) });
+      });
+      sujo(db, 'auto');
+    }
+    tocar(db, p);
+    log(db, p.id, '', me, 'PDI atualizado', dados.secao || '');
+    return api.verPDI(db, me, email);
+  };
+
+  api.salvarAcao = function (db, me, dados) {
+    var email = dados.email || me;
+    if (!podeEditar(db, me, email)) erro('Somente o colaborador edita o próprio plano de ação.');
+    var p = pdiDe(db, email) || criarPDI(db, email, me, 'Ferramenta');
+    var n = normAcao(dados);
+    if (!n.oque) erro('Informe o que você vai desenvolver.');
+    if (!n.prazo) erro('Informe o prazo da ação.');
+    if (n.inicio && n.prazo < n.inicio) erro('O prazo precisa ser depois da data de início.');
+    var a = dados.id ? acaoPorId(db, dados.id) : null;
+    if (a) {
+      if (a.pdiId !== p.id) erro('Ação não pertence a este PDI.');
+      var mudouNucleo = CAMPOS_NUCLEO.some(function (k) { return str(a[k]) !== n[k]; });
+      for (var k in n) a[k] = n[k];
+      a.atualizadoEm = agora();
+      if (mudouNucleo && a.aprovacao === 'Aprovado') { a.aprovacao = 'Pendente'; log(db, p.id, a.id, me, 'Ação alterada após aprovação', a.oque + ' · voltou para aprovação do líder'); }
+      else if (mudouNucleo && a.aprovacao === 'Reprovado') { a.aprovacao = 'Rascunho'; log(db, p.id, a.id, me, 'Ação ajustada', a.oque + ' · pronta para reenviar'); }
+      else log(db, p.id, a.id, me, 'Ação editada', a.oque);
+    } else {
+      a = n; a.id = novoId('A'); a.pdiId = p.id; a.aprovacao = 'Rascunho'; a.obsLider = ''; a.avaliadoPor = ''; a.avaliadoEm = ''; a.criadoEm = agora(); a.atualizadoEm = agora();
+      db.acoes.push(a);
+      log(db, p.id, a.id, me, 'Ação criada', a.oque);
+    }
+    sujo(db, 'acoes'); tocar(db, p);
+    return api.verPDI(db, me, email);
+  };
+
+  api.atualizarAndamento = function (db, me, acaoId, dados) {
+    var a = acaoPorId(db, acaoId) || erro('Ação não encontrada.');
+    var p = pdiPorId(db, a.pdiId);
+    if (!podeEditar(db, me, p.email)) erro('Somente o colaborador atualiza o andamento.');
+    var antes = a.status + ' ' + progressoAcao(a) + '%';
+    if (dados.status && STATUS_ACAO.indexOf(dados.status) >= 0) a.status = dados.status;
+    if (dados.progresso !== undefined) a.progresso = Math.max(0, Math.min(100, Math.round(num(dados.progresso))));
+    if (a.status === 'Concluído') a.progresso = 100;
+    if (dados.obs !== undefined) a.obs = str(dados.obs);
+    a.atualizadoEm = agora();
+    sujo(db, 'acoes'); tocar(db, p);
+    log(db, p.id, a.id, me, 'Andamento atualizado', a.oque + ' · ' + antes + ' → ' + a.status + ' ' + progressoAcao(a) + '%' + (str(dados.nota) ? ' · "' + str(dados.nota) + '"' : ''));
+    return api.verPDI(db, me, p.email);
+  };
+
+  api.excluirAcao = function (db, me, acaoId) {
+    var a = acaoPorId(db, acaoId) || erro('Ação não encontrada.');
+    var p = pdiPorId(db, a.pdiId);
+    if (!podeEditar(db, me, p.email)) erro('Sem permissão.');
+    if (a.aprovacao === 'Aprovado' && !isRH(db, me)) erro('Ação já aprovada pelo líder: marque como Cancelada em vez de excluir.');
+    db.acoes = db.acoes.filter(function (x) { return x.id !== acaoId; });
+    sujo(db, 'acoes'); tocar(db, p);
+    log(db, p.id, '', me, 'Ação excluída', a.oque);
+    return api.verPDI(db, me, p.email);
+  };
+
+  api.enviarAprovacao = function (db, me, email) {
+    email = email || me;
+    if (!podeEditar(db, me, email)) erro('Sem permissão.');
+    var p = pdiDe(db, email) || erro('PDI não encontrado.');
+    var u = usuario(db, email) || {};
+    if (!u.gestor) erro('Seu cadastro não tem gestor imediato. Peça ao RH para incluir antes de enviar.');
+    p.gestor = low(u.gestor);
+    var n = 0;
+    acoesDe(db, p.id).forEach(function (a) { if (a.aprovacao === 'Rascunho') { a.aprovacao = 'Pendente'; a.atualizadoEm = agora(); n++; } });
+    if (!n) erro('Não há ações em rascunho para enviar.');
+    p.enviadoEm = agora();
+    sujo(db, 'acoes'); tocar(db, p);
+    log(db, p.id, '', me, 'Enviado para aprovação', n + (n > 1 ? ' ações' : ' ação') + ' para ' + nomeDe(db, u.gestor));
+    return api.verPDI(db, me, email);
+  };
+
+  // ---------- Líder ----------
+  api.meuTime = function (db, me) {
+    return liderados(db, me).map(function (u) { return linhaResumo(db, u); }).sort(function (a, b) { return b.pendentes - a.pendentes || a.nome.localeCompare(b.nome); });
+  };
+
+  api.avaliarAcao = function (db, me, acaoId, decisao, obs) {
+    var a = acaoPorId(db, acaoId) || erro('Ação não encontrada.');
+    var p = pdiPorId(db, a.pdiId);
+    var u = usuario(db, p.email) || {};
+    if (low(u.gestor) !== low(me)) erro('Somente o gestor imediato aprova ou reprova as ações.');
+    if (a.aprovacao !== 'Pendente') erro('Esta ação não está aguardando aprovação.');
+    if (decisao !== 'Aprovado' && decisao !== 'Reprovado') erro('Decisão inválida.');
+    if (decisao === 'Reprovado' && !str(obs)) erro('Ao reprovar, descreva o que precisa ter neste plano de ação.');
+    a.aprovacao = decisao; a.obsLider = str(obs); a.avaliadoPor = low(me); a.avaliadoEm = agora(); a.atualizadoEm = agora();
+    sujo(db, 'acoes'); tocar(db, p);
+    log(db, p.id, a.id, me, decisao === 'Aprovado' ? 'Ação aprovada' : 'Ação reprovada', a.oque + (str(obs) ? ' · "' + str(obs) + '"' : ''));
+    return api.verPDI(db, me, p.email);
+  };
+
+  // ---------- RH ----------
+  function exigirRH(db, me) { if (!isRH(db, me)) erro('Área exclusiva do RH.'); }
+
+  api.painelRH = function (db, me) {
+    exigirRH(db, me);
+    var linhas = db.usuarios.filter(ativo).map(function (u) { return linhaResumo(db, u); });
+    var k = { colaboradores: linhas.length, comPDI: 0, semPDI: 0, concluidos: 0, aguardando: 0, ajustes: 0, acoes: 0, acoesConcluidas: 0, atrasadas: 0, excel: 0, ferramenta: 0, progressoMedio: 0 };
+    var porStatus = {}, porArea = {}, soma = 0;
+    linhas.forEach(function (l) {
+      porStatus[l.status] = (porStatus[l.status] || 0) + 1;
+      var ar = porArea[l.area] || (porArea[l.area] = { area: l.area, colaboradores: 0, comPDI: 0, concluidos: 0, somaProg: 0, atrasadas: 0 });
+      ar.colaboradores++;
+      if (l.temPDI) {
+        k.comPDI++; ar.comPDI++; soma += l.progresso; ar.somaProg += l.progresso; ar.atrasadas += l.atrasadas;
+        if (l.origem === 'Excel') k.excel++; else k.ferramenta++;
+      } else k.semPDI++;
+      if (l.status === 'Concluído') { k.concluidos++; ar.concluidos++; }
+      if (l.status === 'Aguardando aprovação') k.aguardando++;
+      if (l.status === 'Ajustes solicitados') k.ajustes++;
+      k.acoes += l.total; k.acoesConcluidas += l.concluidas; k.atrasadas += l.atrasadas;
+    });
+    k.progressoMedio = k.comPDI ? Math.round(soma / k.comPDI) : 0;
+    var areas = Object.keys(porArea).map(function (a) { var x = porArea[a]; x.progressoMedio = x.comPDI ? Math.round(x.somaProg / x.comPDI) : 0; delete x.somaProg; return x; }).sort(function (a, b) { return a.area.localeCompare(b.area); });
+    return { kpis: k, porStatus: porStatus, areas: areas, linhas: linhas.sort(function (a, b) { return a.nome.localeCompare(b.nome); }), geradoEm: agora() };
+  };
+
+  api.colaboradores = function (db, me) {
+    exigirRH(db, me);
+    return db.usuarios.map(function (u) { var c = clone(u); c.gestorNome = u.gestor ? nomeDe(db, u.gestor) : ''; c.temPDI = !!pdiDe(db, u.email); return c; }).sort(function (a, b) { return String(a.nome).localeCompare(String(b.nome)); });
+  };
+
+  // lista leve (nome/e-mail) para seletores — RH vê todos
+  api.listaPessoas = function (db, me) {
+    exigirRH(db, me);
+    return db.usuarios.filter(ativo).map(function (u) { return { email: u.email, nome: u.nome, cargo: u.cargo, temPDI: !!pdiDe(db, u.email) }; }).sort(function (a, b) { return String(a.nome).localeCompare(String(b.nome)); });
+  };
+
+  function upsertUsuario(db, d) {
+    var email = low(d.email);
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) erro('E-mail inválido: ' + (d.email || '(vazio)'));
+    var perfil = /^rh$/i.test(str(d.perfil)) ? 'RH' : (/^l[ií]der/i.test(str(d.perfil)) ? 'Líder' : 'Colaborador');
+    var u = usuario(db, email), novo = !u;
+    if (!u) { u = { email: email }; db.usuarios.push(u); }
+    u.nome = str(d.nome) || u.nome || email; u.cargo = str(d.cargo); u.area = str(d.area); u.gestor = low(d.gestor); u.perfil = perfil;
+    u.ativo = (d.ativo === false || /^n[ãa]o$/i.test(str(d.ativo))) ? 'Não' : 'Sim';
+    if (u.gestor === email) erro(u.nome + ': o gestor não pode ser a própria pessoa.');
+    var p = pdiDe(db, email); if (p) { p.gestor = u.gestor; if (!p.cargo) p.cargo = u.cargo; sujo(db, 'pdis'); }
+    sujo(db, 'usuarios');
+    return novo;
+  }
+
+  api.salvarColaborador = function (db, me, d) {
+    exigirRH(db, me);
+    if (d.emailOriginal && low(d.emailOriginal) !== low(d.email)) erro('Para trocar o e-mail, cadastre a pessoa de novo e desative o cadastro antigo.');
+    upsertUsuario(db, d);
+    return api.colaboradores(db, me);
+  };
+
+  api.importarColaboradores = function (db, me, lista) {
+    exigirRH(db, me);
+    var novos = 0, atualizados = 0, erros = [];
+    (lista || []).forEach(function (d, i) {
+      try { if (upsertUsuario(db, d)) novos++; else atualizados++; }
+      catch (e) { erros.push('Linha ' + (i + 2) + ': ' + e.message); }
+    });
+    return { novos: novos, atualizados: atualizados, erros: erros, lista: api.colaboradores(db, me) };
+  };
+
+  // ---------- Importação de Excel (modelo PDI.xlsx) ----------
+  // payload: { email, ident:{nome,cargo,inicio,fim}, auto:[], curtoPrazo, medioPrazo, acoes:[], modo:'substituir'|'adicionar', enviar:bool }
+  api.importarExcel = function (db, me, d) {
+    var email = low(d.email || me);
+    if (!podeEditar(db, me, email)) erro('Você só pode importar o seu próprio PDI.');
+    if (!usuario(db, email)) erro('Colaborador não cadastrado: ' + email);
+    var p = pdiDe(db, email);
+    if (!p) p = criarPDI(db, email, me, 'Excel');
+    else {
+      p.origem = 'Excel';
+      if (d.modo === 'substituir') {
+        var aprovadas = acoesDe(db, p.id).filter(function (a) { return a.aprovacao === 'Aprovado'; }).length;
+        if (aprovadas && !d.confirmarAprovadas) erro('Este PDI tem ' + aprovadas + ' ação(ões) já aprovadas pelo líder. Confirme a substituição para continuar.');
+        db.acoes = db.acoes.filter(function (a) { return a.pdiId !== p.id; });
+      }
+    }
+    var id = d.ident || {};
+    ['nome', 'cargo', 'inicio', 'fim'].forEach(function (k) { if (str(id[k])) p[k] = str(id[k]); });
+    if (str(d.curtoPrazo)) p.curtoPrazo = str(d.curtoPrazo);
+    if (str(d.medioPrazo)) p.medioPrazo = str(d.medioPrazo);
+    if (d.auto && d.auto.length) {
+      db.auto = db.auto.filter(function (x) { return x.pdiId !== p.id; });
+      d.auto.forEach(function (x, i) { if (str(x.titulo) || str(x.descricao)) db.auto.push({ pdiId: p.id, tipo: x.tipo, ordem: String(x.ordem || i + 1), titulo: str(x.titulo), descricao: str(x.descricao) }); });
+      sujo(db, 'auto');
+    }
+    var u = usuario(db, email); p.gestor = low(u.gestor || '');
+    var envia = !!d.enviar && !!u.gestor, n = 0;
+    (d.acoes || []).forEach(function (x) {
+      var a = normAcao(x); if (!a.oque) return;
+      a.id = novoId('A'); a.pdiId = p.id; a.aprovacao = envia ? 'Pendente' : 'Rascunho'; a.obsLider = ''; a.avaliadoPor = ''; a.avaliadoEm = ''; a.criadoEm = agora(); a.atualizadoEm = agora();
+      db.acoes.push(a); n++;
+    });
+    if (envia && n) p.enviadoEm = agora();
+    sujo(db, 'acoes'); tocar(db, p);
+    log(db, p.id, '', me, 'Excel importado', n + ' ação(ões) · modo ' + (d.modo || 'substituir') + (envia ? ' · enviado para aprovação' : '') + (d.arquivo ? ' · ' + d.arquivo : ''));
+    return api.verPDI(db, me, email);
+  };
+
+  api._status = { acao: STATUS_ACAO, aprovacao: APROVACAO };
+  return api;
+})();
+
+</script>
+
+<script>
+(function(){
+'use strict';
+var DEMO = !(window.google && google.script && google.script.run);
+var BUILD_FRONT = 'BUILD 1 · 02/11/2026';
+var S = { ctx:null, view:'meu', pessoa:null, modo:'dono', pdiRes:null, time:null, timeFiltro:'todos', rh:null, rhF:{q:'',area:'',gestor:'',status:''}, colab:null, imp:null, pessoas:null };
+
+/* ---------------- utilidades ---------------- */
+function $(s,r){return (r||document).querySelector(s);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function fmtD(iso){ if(!iso) return '—'; var m=String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/); return m? m[3]+'/'+m[2]+'/'+m[1] : esc(iso); }
+function fmtDH(s){ if(!s) return '—'; var m=String(s).match(/^(\d{4})-(\d{2})-(\d{2})\s*(\d{2}:\d{2})?/); return m? m[3]+'/'+m[2]+'/'+m[1]+(m[4]?' '+m[4]:'') : esc(s); }
+function pad(n){return (n<10?'0':'')+n;}
+function isoLocal(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function hojeISO(){ return isoLocal(new Date()); }
+function diasAte(iso){ if(!iso) return null; var a=new Date(iso+'T12:00:00'), b=new Date(hojeISO()+'T12:00:00'); return Math.round((a-b)/86400000); }
+function addMeses(iso,n){ var d=new Date((iso||hojeISO())+'T12:00:00'); d.setMonth(d.getMonth()+n); return isoLocal(d); }
+function iniciais(n){ return String(n||'?').split(/\s+/).filter(Boolean).slice(0,2).map(function(p){return p[0];}).join('').toUpperCase(); }
+function primeiro(n){ return String(n||'').split(' ')[0]; }
+function norm(s){ return String(s==null?'':s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim(); }
+
+function run(fn){
+  var args=[].slice.call(arguments,1);
+  if(DEMO) return new Promise(function(res,rej){ setTimeout(function(){ try{ var db=demoDb(); var r=PDI[fn].apply(null,[db,demoMe()].concat(args)); demoSave(db); if(fn==='contexto') r.build='DEMO · '+BUILD_FRONT; res(JSON.parse(JSON.stringify(r))); }catch(e){ rej(e); } },120); });
+  return new Promise(function(res,rej){ google.script.run.withSuccessHandler(res).withFailureHandler(rej).api(fn,args); });
+}
+function errMsg(e){ return (e && (e.message||e)) + ''; }
+
+var toastT;
+function toast(msg,err){ var t=$('#toast'); if(!t){ t=document.createElement('div'); t.id='toast'; t.setAttribute('role','status'); document.body.appendChild(t);} t.className='toast'+(err?' err':''); t.textContent=msg; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(function(){t.hidden=true;}, err?6000:3200); }
+
+/* ---------------- modal ---------------- */
+var modalOnOk=null;
+function modal(title, body, opts){
+  opts=opts||{};
+  $('#modalRoot').innerHTML='<div class="ov" id="ov"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="modal-h"><h3 id="mTitle">'+esc(title)+'</h3><button class="btn ghost sm" data-act="closeModal" aria-label="Fechar">✕</button></div><form id="mForm" novalidate><div class="modal-b">'+body+'</div><div class="modal-f">'+
+    '<button type="button" class="btn ghost" data-act="closeModal">Cancelar</button>'+
+    (opts.ok===false?'':'<button type="submit" class="btn '+(opts.cls||'pri')+'" id="mOk">'+esc(opts.ok||'Salvar')+'</button>')+'</div></form></div></div>';
+  modalOnOk=opts.onOk||null;
+  var f=$('#mForm'); f.addEventListener('submit',function(e){ e.preventDefault(); if(!modalOnOk) return closeModal(); var b=$('#mOk'); b.disabled=true; new Promise(function(r){ r(modalOnOk(new FormData(f), f)); }).then(function(keep){ if(keep!==true) closeModal(); }).catch(function(err){ toast(errMsg(err),true); }).finally(function(){ if($('#mOk')) $('#mOk').disabled=false; }); });
+  $('#ov').addEventListener('mousedown',function(e){ if(e.target.id==='ov') closeModal(); });
+  setTimeout(function(){ var el=f.querySelector('input:not([type=hidden]),textarea,select'); if(el) el.focus(); },30);
+  if(opts.after) opts.after(f);
+}
+function closeModal(){ $('#modalRoot').innerHTML=''; modalOnOk=null; }
+document.addEventListener('keydown',function(e){ if(e.key==='Escape' && $('#ov')) closeModal(); });
+
+/* ---------------- ícones ---------------- */
+var IC={
+  meu:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10l8-6 8 6v10"/><path d="M9 20v-6h6v6"/></svg>',
+  time:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16 14.3c2.9.3 5 2.6 5 5.7"/></svg>',
+  rh:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V4"/><path d="M4 20h16"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg>',
+  colab:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="11" r="2.5"/><path d="M5.5 17c.6-1.8 2-2.8 3.5-2.8s2.9 1 3.5 2.8M14 10h4M14 14h4"/></svg>',
+  imp:'<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M12 18v-6M9 15l3-3 3 3"/></svg>'
+};
+
+var SVG={
+  doc:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 13h6M9 17h4"/></svg>',
+  cal:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:-1px"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+  clock:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 3"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 12v6M9 15h6"/></svg>',
+  up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/><path d="M12 4v11M7 9l5-5 5 5"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
+  user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>'
+};
+/* ---------------- status → estilo ---------------- */
+var ST_PDI={'Sem PDI':'','Em elaboração':'info','Aguardando aprovação':'warn','Ajustes solicitados':'bad','Em andamento':'blue','Concluído':'ok'};
+var ST_COR={'Sem PDI':'var(--gray)','Em elaboração':'var(--purple)','Aguardando aprovação':'var(--orange)','Ajustes solicitados':'var(--red)','Em andamento':'var(--blue)','Concluído':'var(--green)'};
+var ST_APR={'Rascunho':'','Pendente':'warn','Aprovado':'ok','Reprovado':'bad'};
+var APR_TXT={'Rascunho':'Rascunho','Pendente':'Aguardando líder','Aprovado':'Aprovada','Reprovado':'Reprovada'};
+var ST_ACAO={'Não iniciado':'','Em andamento':'info','Concluído':'ok','Cancelado':''};
+function pill(txt,cls){ return '<span class="pill '+(cls||'')+'">'+esc(txt)+'</span>'; }
+function pillPDI(s){ return pill(s, ST_PDI[s]); }
+function progHTML(v,ok){ v=Math.round(v||0); return '<div class="prog"><div class="bar'+(ok||v===100?' ok':'')+'"><i style="width:'+v+'%"></i></div><span class="num">'+v+'%</span></div>'; }
+
+/* ---------------- navegação ---------------- */
+function navItems(){
+  var c=S.ctx, it=[{k:'meu',t:'Meu PDI',ic:IC.meu,g:'Liderado'}];
+  if(c.isLider) it.push({k:'time',t:'Meu time',ic:IC.time,g:'Líder'});
+  if(c.isRH){ it.push({k:'rh',t:'Painel RH',ic:IC.rh,g:'RH'}); it.push({k:'colab',t:'Colaboradores',ic:IC.colab,g:'RH'}); }
+  it.push({k:'importar',t:'Importar Excel',ic:IC.imp,g:'Ferramentas'});
+  return it;
+}
+function renderNav(){
+  var g='', h='', badge=S.ctx.pendentesTime||0;
+  navItems().forEach(function(i){
+    if(i.g!==g){ g=i.g; h+='<div class="nav-label">'+esc(g)+'</div>'; }
+    var on = S.view===i.k || (S.view==='pessoa' && ((S.modo==='lider'&&i.k==='time')||(S.modo==='rh'&&i.k==='rh')));
+    h+='<button data-act="go" data-v="'+i.k+'" class="'+(on?'on':'')+'"'+(on?' aria-current="page"':'')+'>'+i.ic+'<span>'+esc(i.t)+'</span>'+(i.k==='time'&&badge?'<span class="badge num">'+badge+'</span>':'')+'</button>';
+  });
+  $('#nav').innerHTML=h;
+  var me=S.ctx.me, papel=S.ctx.isRH?'RH':(S.ctx.isLider?'Líder':'Liderado');
+  $('#meBox').innerHTML='<div class="avatar">'+esc(iniciais(me.nome))+'</div><div><b>'+esc(me.nome)+'</b><small>'+esc(papel)+(me.cargo?' · '+esc(me.cargo):'')+'</small></div>';
+  $('#build').textContent=S.ctx.build||BUILD_FRONT;
+}
+function setTop(t,s,tiles){ $('#tTitle').textContent=t; $('#tSub').textContent=s||''; $('#tTiles').innerHTML=(tiles||[]).map(function(x){ return '<button class="tile" data-act="'+x.act+'"'+(x.v?' data-v="'+x.v+'"':'')+'><span class="ico '+x.cor+'">'+x.ic+'</span>'+esc(x.t)+'</button>'; }).join(''); document.title=t+' · PDI Escavador'; }
+function TILES_MEU(){ return [{act:'novaAcao',t:'Nova ação',cor:'green',ic:SVG.plus},{act:'go',v:'importar',t:'Subir Excel',cor:'red',ic:SVG.up}]; }
+function setView(h){ $('#view').innerHTML=h; }
+function loading(msg){ setView('<div class="loading">'+esc(msg||'Carregando…')+'</div>'); }
+
+function go(v, extra){
+  S.view=v; if(extra){ for(var k in extra) S[k]=extra[k]; }
+  $('#app').classList.remove('open'); renderNav(); window.scrollTo(0,0);
+  if(v==='meu') return viewMeu();
+  if(v==='time') return viewTime();
+  if(v==='rh') return viewRH();
+  if(v==='colab') return viewColab();
+  if(v==='importar') return viewImportar();
+  if(v==='pessoa') return viewPessoa();
+}
+
+function refreshCtx(){ return run('contexto').then(function(c){ S.ctx=c; return (c.isLider? run('meuTime') : Promise.resolve([])).then(function(t){ S.ctx.pendentesTime=t.reduce(function(s,l){return s+(l.pendentes||0);},0); renderNav(); }); }); }
+
+/* ================= PDI (dono / líder / RH) ================= */
+function viewMeu(){ S.modo='dono'; S.pessoa=S.ctx.me.email; setTop('Olá, '+primeiro(S.ctx.me.nome)+'!','Aqui está o seu Plano de Desenvolvimento Individual.',TILES_MEU()); loading('Carregando seu PDI…'); run('verPDI').then(function(r){ S.pdiRes=r; renderPDI(); }).catch(fail); }
+function viewPessoa(){ loading('Carregando PDI…'); run('verPDI',S.pessoa).then(function(r){ S.pdiRes=r; setTop('PDI de '+(r.pessoa.nome||r.pessoa.email), S.modo==='lider'?'Acompanhe e aprove ou reprove os planos de ação.':'Visão RH · somente leitura.'); renderPDI(); }).catch(fail); }
+function fail(e){ setView('<div class="card sec"><div class="callout bad"><div class="sp"><b>Não foi possível carregar.</b> '+esc(errMsg(e))+'</div></div></div>'); }
+function afterSave(r,msg){ S.pdiRes=r; renderPDI(); if(msg) toast(msg); refreshCtx(); }
+
+function renderPDI(){
+  var r=S.pdiRes, p=r.pdi, dono=S.modo==='dono', lider=S.modo==='lider', pes=r.pessoa;
+  var back = !dono ? '<div><button class="btn ghost sm" data-act="go" data-v="'+(lider?'time':'rh')+'">← Voltar para '+(lider?'Meu time':'Painel RH')+'</button></div>' : '';
+  if(!p){
+    if(dono) return setView('<section class="card empty"><span class="pill">Sem PDI</span><h2>Você ainda não tem um PDI</h2><p>O PDI guia seu desenvolvimento e é validado com seu gestor'+(r.gestorNome?' ('+esc(r.gestorNome)+')':'')+'. Escolha como prefere montar:</p><div class="opts">'+
+      '<div class="opt"><span class="ico green">'+SVG.plus+'</span><b>Montar aqui na ferramenta</b><p class="hint">Preencha identificação, autoavaliação, objetivos e plano de ação passo a passo.</p><button class="btn pri" data-act="iniciar">Começar meu PDI</button></div>'+
+      '<div class="opt"><span class="ico red">'+SVG.up+'</span><b>Subir o Excel preenchido</b><p class="hint">Já preencheu o modelo PDI.xlsx? Importe e revise antes de enviar ao líder.</p><div class="row"><button class="btn dark" data-act="go" data-v="importar">Importar Excel</button><button class="btn" data-act="modeloBranco">Baixar modelo</button></div></div></div></section>');
+    return setView(back+'<section class="card empty"><span class="pill">Sem PDI</span><h2>'+esc(pes.nome||pes.email)+' ainda não iniciou o PDI</h2><p>Assim que o colaborador montar o plano na ferramenta ou subir o Excel, ele aparece aqui.</p></section>');
+  }
+  var R=p.resumo, h=back;
+  // cabeçalho
+  h+='<section class="card pdi-head"><div><div class="eyebrow">'+SVG.doc+'Plano de desenvolvimento individual</div><h2>'+esc(p.nome)+'</h2>'+
+     '<div class="eyebrow" style="color:var(--ink-3)">Vigência</div><div class="big-title num">'+fmtD(p.inicio)+' – '+fmtD(p.fim)+'</div>'+
+     '<div class="meta"><span>'+SVG.cal+' Atualizado em '+fmtDH(p.atualizadoEm)+'</span><span><b>Cargo:</b> '+esc(p.cargo||'—')+'</span><span><b>Gestor:</b> '+esc(p.gestorNome||'sem gestor')+'</span></div></div>'+
+     '<div class="big-prog"><div class="row"><button class="btn pri sm" data-act="exportar">'+SVG.doc+' Baixar Excel</button></div><div class="v num">'+R.progresso+'%<small>concluído</small></div><div class="bar'+(R.progresso===100?' ok':'')+'"><i style="width:'+R.progresso+'%"></i></div><div class="hint num">'+R.concluidas+' de '+R.total+' ações concluídas'+(R.atrasadas?' · <span class="tag-late">'+R.atrasadas+' atrasada'+(R.atrasadas>1?'s':'')+'</span>':'')+'</div></div>'+
+     '<div class="pdi-foot">'+pillPDI(R.status)+'<span class="chip">'+(p.origem==='Excel'?'Importado do Excel':'Montado na ferramenta')+'</span></div></section>';
+  // avisos
+  if(dono && R.reprovadas) h+='<div class="callout bad"><div class="sp"><b>'+esc(primeiro(p.gestorNome)||'Seu líder')+' pediu ajustes em '+R.reprovadas+' ação'+(R.reprovadas>1?'ões':'')+'.</b> Veja as observações em cada plano marcado como reprovado, ajuste e envie novamente.</div></div>';
+  if(dono && R.rascunho) h+='<div class="callout info"><div class="sp"><b>'+R.rascunho+' ação'+(R.rascunho>1?'ões':'')+' em rascunho.</b> Quando estiver pronto, envie para '+esc(p.gestorNome||'seu gestor')+' aprovar.</div><div class="row"><button class="btn pri sm" data-act="enviar">Enviar para aprovação</button></div></div>';
+  if(dono && R.pendentes && !R.rascunho) h+='<div class="callout warn"><div class="sp"><b>'+R.pendentes+' ação'+(R.pendentes>1?'ões':'')+' aguardando '+esc(p.gestorNome||'o gestor')+'.</b> Você pode seguir editando o restante do PDI.</div></div>';
+  if(lider && R.pendentes) h+='<div class="callout warn"><div class="sp"><b>'+R.pendentes+' ação'+(R.pendentes>1?'ões':'')+' aguardando sua aprovação.</b> Aprove ou reprove cada plano; ao reprovar, diga o que precisa ter.</div></div>';
+  // 1 identificação
+  h+='<section class="card sec"><div class="sec-h"><span class="n">1</span><h2>Identificação</h2><span class="sp"></span>'+(dono?'<button class="btn sm" data-act="edIdent">Editar</button>':'')+'</div>'+
+     '<dl class="dl"><div><dt>Nome do colaborador</dt><dd>'+esc(p.nome)+'</dd></div><div><dt>Cargo</dt><dd>'+esc(p.cargo||'—')+'</dd></div><div><dt>Gestor imediato</dt><dd>'+esc(p.gestorNome||'—')+'</dd></div><div><dt>Data de início do PDI</dt><dd class="num">'+fmtD(p.inicio)+'</dd></div><div><dt>Período de validade</dt><dd class="num">até '+fmtD(p.fim)+'</dd></div></dl></section>';
+  // 2 autoavaliação
+  var pf=p.auto.filter(function(x){return x.tipo==='Ponto forte';}), ad=p.auto.filter(function(x){return x.tipo!=='Ponto forte';});
+  function lista(arr,lbl,vazio){ if(!arr.length) return '<p class="empty-txt">'+vazio+'</p>'; return '<div class="items">'+arr.map(function(x){ return '<div class="item"><b>'+esc(x.titulo||'—')+'</b>'+(x.descricao?'<span class="lbl">'+lbl+'</span><p>'+esc(x.descricao)+'</p>':'')+'</div>'; }).join('')+'</div>'; }
+  h+='<section class="card sec"><div class="sec-h"><span class="n">2</span><h2>Autoavaliação</h2><span class="sp"></span>'+(dono?'<button class="btn sm" data-act="edAuto">Editar</button>':'')+'<p>Competências atuais com base na avaliação 360º, feedbacks recebidos e autopercepção.</p></div>'+
+     '<div class="two"><div><div class="col-h">Pontos fortes</div>'+lista(pf,'Como se manifesta','Nenhum ponto forte registrado.')+'</div><div><div class="col-h dev">Áreas de desenvolvimento</div>'+lista(ad,'Por que é importante','Nenhuma área de desenvolvimento registrada.')+'</div></div></section>';
+  // 3 objetivos
+  h+='<section class="card sec"><div class="sec-h"><span class="n">3</span><h2>Objetivo de carreira</h2><span class="sp"></span>'+(dono?'<button class="btn sm" data-act="edObj">Editar</button>':'')+'<p>Como o desenvolvimento das áreas acima contribui para os objetivos de curto e médio prazo.</p></div>'+
+     '<div class="two"><div class="obj"><b>Curto prazo · 6 meses a 1 ano</b><p>'+(p.curtoPrazo?esc(p.curtoPrazo):'<span class="empty-txt">Não preenchido.</span>')+'</p></div><div class="obj"><b>Médio prazo · 2 a 3 anos</b><p>'+(p.medioPrazo?esc(p.medioPrazo):'<span class="empty-txt">Não preenchido.</span>')+'</p></div></div></section>';
+  // 4 plano de ação
+  var cnt='<div class="counts">'+(R.aprovadas?pill(R.aprovadas+' aprovada'+(R.aprovadas>1?'s':''),'ok'):'')+(R.pendentes?pill(R.pendentes+' aguardando','warn'):'')+(R.reprovadas?pill(R.reprovadas+' reprovada'+(R.reprovadas>1?'s':''),'bad'):'')+(R.rascunho?pill(R.rascunho+' rascunho'):'')+'</div>';
+  h+='<section class="card sec"><div class="sec-h"><span class="n">4</span><h2>Plano de ação</h2>'+cnt+'<span class="sp"></span>'+(dono?(R.rascunho?'<button class="btn sm dark" data-act="enviar">Enviar '+R.rascunho+' para aprovação</button>':'')+'<button class="btn pri sm" data-act="novaAcao">+ Nova ação</button>':'')+'</div>';
+  if(!p.acoes.length) h+='<p class="empty-txt">Nenhuma ação cadastrada'+(dono?'. Comece por uma das áreas de desenvolvimento da autoavaliação.':'.')+'</p>';
+  else h+='<div class="acoes">'+p.acoes.map(acaoHTML).join('')+'</div>';
+  h+='</section>';
+  // histórico
+  h+='<details class="card"><summary>Histórico do PDI <span class="hint num">('+p.hist.length+')</span></summary><div class="inner"><ul class="timeline">'+p.hist.map(function(x){ return '<li><time class="num">'+fmtDH(x.data)+'</time><p><b>'+esc(x.evento)+'</b> · '+esc(x.autorNome)+(x.detalhe?'<br>'+esc(x.detalhe):'')+'</p></li>'; }).join('')+'</ul></div></details>';
+  setView(h);
+}
+
+function acaoHTML(a){
+  var dono=S.modo==='dono', lider=S.modo==='lider', d=diasAte(a.prazo);
+  var prazoTxt = a.status==='Concluído'?'Concluída':(a.status==='Cancelado'?'Cancelada':(a.atrasada?'<span class="tag-late">'+Math.abs(d)+' dia'+(Math.abs(d)!==1?'s':'')+' de atraso</span>':(d!=null?(d===0?'vence hoje':'faltam '+d+' dia'+(d!==1?'s':'')):'')));
+  var h='<article class="acao st-'+esc(a.aprovacao)+'"><div class="acao-h"><h3>'+esc(a.oque)+'</h3><div class="row">'+pill(APR_TXT[a.aprovacao]||a.aprovacao, ST_APR[a.aprovacao])+pill(a.status, ST_ACAO[a.status])+'</div></div>';
+  h+='<div class="acao-b">'+
+     '<div><span class="lbl">Como? (ações e recursos)</span><p>'+(esc(a.como)||'—')+'</p></div>'+
+     '<div><span class="lbl">Suporte do gestor</span><p>'+(esc(a.suporte)||'—')+'</p></div>'+
+     '<div><span class="lbl">Indicador de sucesso</span><p>'+(esc(a.indicador)||'—')+'</p></div>'+
+     '<div><span class="lbl">Início → prazo</span><p class="num">'+fmtD(a.inicio)+' → '+fmtD(a.prazo)+(a.prazoTexto?' <span class="hint">('+esc(a.prazoTexto)+')</span>':'')+'<br><span class="hint">'+prazoTxt+'</span></p></div>'+
+     (a.obs?'<div style="grid-column:1/-1"><span class="lbl">Observações</span><p>'+esc(a.obs)+'</p></div>':'')+'</div>';
+  if(a.aprovacao==='Reprovado' && a.obsLider) h+='<div class="callout bad"><div class="sp"><b>'+esc(primeiro(a.avaliadoPorNome)||'Líder')+' pediu ajustes</b> <span class="hint num">· '+fmtDH(a.avaliadoEm)+'</span><br><span style="white-space:pre-wrap">'+esc(a.obsLider)+'</span></div></div>';
+  else if(a.aprovacao==='Aprovado' && a.obsLider) h+='<div class="callout ok"><div class="sp"><b>Comentário de '+esc(primeiro(a.avaliadoPorNome))+':</b> '+esc(a.obsLider)+'</div></div>';
+  h+='<div class="acao-f">'+progHTML(a.progresso, a.status==='Concluído');
+  if(dono){
+    h+='<button class="btn sm pri" data-act="andamento" data-id="'+a.id+'">Atualizar andamento</button><button class="btn sm" data-act="edAcao" data-id="'+a.id+'">'+(a.aprovacao==='Reprovado'?'Ajustar plano':'Editar')+'</button>';
+    if(a.aprovacao!=='Aprovado') h+='<button class="btn sm ghost" data-act="delAcao" data-id="'+a.id+'">Excluir</button>';
+  }
+  if(lider && a.aprovacao==='Pendente') h+='<button class="btn sm ok" data-act="aprovar" data-id="'+a.id+'">Aprovar</button><button class="btn sm bad" data-act="reprovar" data-id="'+a.id+'">Reprovar</button>';
+  if(a.aprovacao==='Aprovado' && a.avaliadoEm) h+='<span class="hint">Aprovada por '+esc(primeiro(a.avaliadoPorNome))+' em '+fmtD(a.avaliadoEm)+'</span>';
+  h+='</div></article>';
+  return h;
+}
+function acaoById(id){ return S.pdiRes.pdi.acoes.filter(function(a){return a.id===id;})[0]; }
+
+function fInput(name,label,val,type,extra){ return '<div class="f"><label for="f_'+name+'">'+esc(label)+'</label><input id="f_'+name+'" name="'+name+'" type="'+(type||'text')+'" value="'+esc(val||'')+'" '+(extra||'')+'></div>'; }
+function fText(name,label,val,ph,extra){ return '<div class="f"><label for="f_'+name+'">'+esc(label)+'</label><textarea id="f_'+name+'" name="'+name+'" placeholder="'+esc(ph||'')+'" '+(extra||'')+'>'+esc(val||'')+'</textarea></div>'; }
+function fSel(name,label,val,opts){ return '<div class="f"><label for="f_'+name+'">'+esc(label)+'</label><select id="f_'+name+'" name="'+name+'">'+opts.map(function(o){ var v=typeof o==='string'?o:o[0], t=typeof o==='string'?o:o[1]; return '<option value="'+esc(v)+'"'+(String(v)===String(val)?' selected':'')+'>'+esc(t)+'</option>'; }).join('')+'</select></div>'; }
+
+var ACT={};
+ACT.go=function(el){ go(el.dataset.v); };
+ACT.tgl=function(){ var a=$('#app'); if(window.innerWidth<=900) a.classList.toggle('open'); else a.classList.toggle('collapsed'); };
+ACT.closeModal=closeModal;
+ACT.iniciar=function(){ run('iniciarPDI').then(function(r){ afterSave(r,'PDI criado. Comece pela autoavaliação.'); }).catch(function(e){toast(errMsg(e),true);}); };
+ACT.edIdent=function(){ var p=S.pdiRes.pdi;
+  modal('Identificação', fInput('nome','Nome do colaborador',p.nome,'text','required')+fInput('cargo','Cargo',p.cargo)+'<div class="grid2">'+fInput('inicio','Data de início do PDI',p.inicio,'date','required')+fInput('fim','Válido até',p.fim,'date','required')+'</div><div class="quick" aria-label="Validade rápida"><span class="hint">Validade:</span><button type="button" data-q="6">6 meses</button><button type="button" data-q="12">12 meses</button><button type="button" data-q="18">18 meses</button></div><p class="hint">Gestor imediato: <b>'+esc(p.gestorNome||'não definido')+'</b>. Ele vem do cadastro; se estiver errado, avise o RH.</p>',
+  {onOk:function(fd){ return run('salvarCabecalho',{nome:fd.get('nome'),cargo:fd.get('cargo'),inicio:fd.get('inicio'),fim:fd.get('fim'),secao:'Identificação'}).then(function(r){afterSave(r,'Identificação salva.');}); },
+   after:function(f){ f.querySelectorAll('[data-q]').forEach(function(b){ b.onclick=function(){ f.fim.value=addMeses(f.inicio.value,+b.dataset.q); }; }); }});
+};
+ACT.edAuto=function(){ var p=S.pdiRes.pdi;
+  function bloco(tipo,i,lblT,lblD,exT,exD){ var x=p.auto.filter(function(a){return a.tipo===tipo;})[i]||{}; return '<fieldset class="fs"><legend>'+esc(tipo==='Ponto forte'?'Ponto forte '+(i+1):'Área de desenvolvimento '+(i+1))+'</legend>'+
+    '<div class="f"><label class="sr" for="t_'+tipo[0]+i+'">'+lblT+'</label><input id="t_'+tipo[0]+i+'" name="t_'+tipo[0]+i+'" value="'+esc(x.titulo||'')+'" placeholder="'+esc(i===0?exT:'')+'"></div>'+
+    '<div class="f"><label for="d_'+tipo[0]+i+'">'+lblD+'</label><textarea id="d_'+tipo[0]+i+'" name="d_'+tipo[0]+i+'" placeholder="'+esc(i===0?exD:'')+'">'+esc(x.descricao||'')+'</textarea></div></fieldset>'; }
+  var b='<p class="hint">Use a avaliação 360º, feedbacks que já recebeu e sua autopercepção. Até 3 de cada.</p><div class="col-h">Pontos fortes</div>';
+  for(var i=0;i<3;i++) b+=bloco('Ponto forte',i,'Ponto forte','Como se manifesta','Ex: Organização e planejamento','Ex: Mantenho meu fluxo de trabalho extremamente organizado…');
+  b+='<div class="col-h dev">Áreas de desenvolvimento</div>';
+  for(i=0;i<3;i++) b+=bloco('Área de desenvolvimento',i,'Área de desenvolvimento','Por que é importante','Ex: Comunicação assertiva e exposição de ideias','Ex: Embora eu domine a parte técnica…');
+  modal('Autoavaliação', b, {onOk:function(fd){ var auto=[]; for(var i=0;i<3;i++){ auto.push({tipo:'Ponto forte',ordem:i+1,titulo:fd.get('t_P'+i),descricao:fd.get('d_P'+i)}); } for(i=0;i<3;i++){ auto.push({tipo:'Área de desenvolvimento',ordem:i+1,titulo:fd.get('t_Á'+i),descricao:fd.get('d_Á'+i)}); }
+    return run('salvarCabecalho',{auto:auto,secao:'Autoavaliação'}).then(function(r){afterSave(r,'Autoavaliação salva.');}); }});
+};
+ACT.edObj=function(){ var p=S.pdiRes.pdi;
+  modal('Objetivo de carreira','<p class="hint">Quais são seus objetivos de carreira? Como o desenvolvimento das áreas identificadas contribui para alcançá-los?</p>'+fText('curtoPrazo','Curto prazo (6 meses a 1 ano)',p.curtoPrazo,'Ex: Assumir a condução das reuniões de planejamento da squad')+fText('medioPrazo','Médio prazo (2 a 3 anos)',p.medioPrazo,'Ex: Chegar a Sênior e ser referência técnica do time'),
+  {onOk:function(fd){ return run('salvarCabecalho',{curtoPrazo:fd.get('curtoPrazo'),medioPrazo:fd.get('medioPrazo'),secao:'Objetivo de carreira'}).then(function(r){afterSave(r,'Objetivos salvos.');}); }});
+};
+function formAcao(a){
+  a=a||{inicio:hojeISO(),status:'Não iniciado',progresso:0};
+  var aviso = a.aprovacao==='Aprovado'?'<div class="callout warn"><div class="sp">Esta ação já foi aprovada. Se mudar o conteúdo (o que, como, suporte, datas ou indicador), ela volta para aprovação do líder.</div></div>':(a.aprovacao==='Reprovado'&&a.obsLider?'<div class="callout bad"><div class="sp"><b>O líder pediu:</b> '+esc(a.obsLider)+'</div></div>':'');
+  var areas=((S.pdiRes&&S.pdiRes.pdi&&S.pdiRes.pdi.auto)||[]).filter(function(x){return x.tipo!=='Ponto forte'&&x.titulo;});
+  return aviso+fInput('oque','O que desenvolver? (competência/habilidade)',a.oque,'text','required placeholder="Ex: Comunicação assertiva"')+
+    (areas.length&&!a.id?'<div class="quick"><span class="hint">Das suas áreas de desenvolvimento:</span>'+areas.map(function(x){return '<button type="button" data-oque="'+esc(x.titulo)+'">'+esc(x.titulo)+'</button>';}).join('')+'</div>':'')+
+    fText('como','Como? (ações e recursos)',a.como,'Ex: Curso online, leitura de livro, praticar em reuniões')+
+    fText('suporte','Suporte do gestor',a.suporte,'Ex: Reuniões semanais, indicação de materiais')+
+    '<div class="grid2">'+fInput('inicio','Data de início',a.inicio,'date')+fInput('prazo','Prazo',a.prazo,'date','required')+'</div>'+
+    '<div class="quick"><span class="hint">Prazo a partir do início:</span><button type="button" data-m="1">1 mês</button><button type="button" data-m="3">3 meses</button><button type="button" data-m="6">6 meses</button><button type="button" data-m="12">12 meses</button></div>'+
+    fText('indicador','Indicador de sucesso',a.indicador,'Ex: Feedback positivo, maior participação')+
+    '<div class="grid2">'+fSel('status','Status',a.status,PDI._status.acao)+'<div class="f"><label for="f_progresso">Progresso: <span id="pv" class="num">'+(a.progresso||0)+'%</span></label><input id="f_progresso" name="progresso" type="range" min="0" max="100" step="5" value="'+(a.progresso||0)+'"></div></div>'+
+    fText('obs','Observações',a.obs,'');
+}
+function wireAcao(f){
+  f.querySelectorAll('[data-m]').forEach(function(b){ b.onclick=function(){ f.prazo.value=addMeses(f.inicio.value,+b.dataset.m); }; });
+  f.querySelectorAll('[data-oque]').forEach(function(b){ b.onclick=function(){ f.oque.value=b.dataset.oque; f.como.focus(); }; });
+  var r=f.progresso; if(r){ r.oninput=function(){ $('#pv').textContent=r.value+'%'; }; }
+  if(f.status) f.status.onchange=function(){ if(f.status.value==='Concluído'){ r.value=100; $('#pv').textContent='100%'; } };
+}
+function dadosAcao(fd,id){ return {id:id||'',oque:fd.get('oque'),como:fd.get('como'),suporte:fd.get('suporte'),inicio:fd.get('inicio'),prazo:fd.get('prazo'),indicador:fd.get('indicador'),status:fd.get('status'),progresso:fd.get('progresso'),obs:fd.get('obs')}; }
+ACT.novaAcao=function(){ if(!S.pdiRes||!S.pdiRes.pdi){ return run('iniciarPDI').then(function(r){ afterSave(r); ACT.novaAcao(); }).catch(function(e){toast(errMsg(e),true);}); } modal('Nova ação do plano', formAcao(), {ok:'Salvar como rascunho',onOk:function(fd){ return run('salvarAcao',dadosAcao(fd)).then(function(r){afterSave(r,'Ação salva como rascunho. Envie para aprovação quando estiver pronto.');}); }, after:wireAcao}); };
+ACT.edAcao=function(el){ var a=acaoById(el.dataset.id); modal(a.aprovacao==='Reprovado'?'Ajustar plano de ação':'Editar ação', formAcao(a), {onOk:function(fd){ return run('salvarAcao',dadosAcao(fd,a.id)).then(function(r){afterSave(r,a.aprovacao==='Reprovado'?'Ação ajustada. Envie novamente para aprovação.':'Ação atualizada.');}); }, after:wireAcao}); };
+ACT.andamento=function(el){ var a=acaoById(el.dataset.id);
+  modal('Atualizar andamento','<p class="hint"><b>'+esc(a.oque)+'</b> · prazo '+fmtD(a.prazo)+'</p><div class="grid2">'+fSel('status','Status',a.status,PDI._status.acao)+'<div class="f"><label for="f_progresso">Progresso: <span id="pv" class="num">'+a.progresso+'%</span></label><input id="f_progresso" name="progresso" type="range" min="0" max="100" step="5" value="'+a.progresso+'"></div></div>'+fText('nota','O que avançou desde a última atualização?','','Ex: Concluí o módulo 2 do curso e conduzi a daily na terça')+fText('obs','Observações da ação',a.obs,''),
+  {ok:'Salvar andamento',onOk:function(fd){ return run('atualizarAndamento',a.id,{status:fd.get('status'),progresso:fd.get('progresso'),nota:fd.get('nota'),obs:fd.get('obs')}).then(function(r){afterSave(r,'Andamento atualizado.');}); }, after:wireAcao});
+};
+ACT.delAcao=function(el){ var a=acaoById(el.dataset.id); modal('Excluir ação','<p>Excluir <b>'+esc(a.oque)+'</b> do plano? Essa ação não pode ser desfeita.</p>',{ok:'Excluir',cls:'bad',onOk:function(){ return run('excluirAcao',a.id).then(function(r){afterSave(r,'Ação excluída.');}); }}); };
+ACT.enviar=function(){ var R=S.pdiRes.pdi.resumo, p=S.pdiRes.pdi;
+  modal('Enviar para aprovação','<p>Enviar <b>'+R.rascunho+' ação'+(R.rascunho>1?'ões':'')+'</b> para <b>'+esc(p.gestorNome||'seu gestor')+'</b> aprovar?</p><p class="hint">Antes de enviar, confira se cada ação tem como, prazo e indicador de sucesso. Você continua podendo editar o restante do PDI.</p>',
+  {ok:'Enviar',onOk:function(){ return run('enviarAprovacao').then(function(r){afterSave(r,'Enviado para '+(p.gestorNome||'o gestor')+'.');}); }});
+};
+ACT.aprovar=function(el){ var a=acaoById(el.dataset.id);
+  modal('Aprovar plano de ação','<p><b>'+esc(a.oque)+'</b></p>'+fText('obs','Comentário (opcional)','','Ex: Ótimo plano. Vamos usar nossa 1:1 de quinta para acompanhar.'),
+  {ok:'Aprovar',cls:'ok',onOk:function(fd){ return run('avaliarAcao',a.id,'Aprovado',fd.get('obs')).then(function(r){afterSave(r,'Ação aprovada.');}); }});
+};
+ACT.reprovar=function(el){ var a=acaoById(el.dataset.id);
+  var sug=['Defina um indicador de sucesso mensurável','O prazo não está compatível com a ação','Detalhe as ações e recursos (curso, livro, prática)','Diga qual suporte você espera de mim','Conecte a ação a uma área de desenvolvimento da autoavaliação'];
+  modal('Reprovar plano de ação','<p><b>'+esc(a.oque)+'</b></p>'+fText('obs','O que precisa ter neste plano de ação?','','Seja específico: o colaborador vai ajustar a partir daqui.','required')+'<div class="quick"><span class="hint">Sugestões:</span>'+sug.map(function(s){return '<button type="button" data-s="'+esc(s)+'">'+esc(s)+'</button>';}).join('')+'</div>',
+  {ok:'Reprovar e enviar observações',cls:'bad',onOk:function(fd){ if(!String(fd.get('obs')||'').trim()) throw new Error('Escreva o que precisa ter no plano para reprovar.'); return run('avaliarAcao',a.id,'Reprovado',fd.get('obs')).then(function(r){afterSave(r,'Ação reprovada. '+primeiro(S.pdiRes.pessoa.nome)+' verá suas observações.');}); },
+   after:function(f){ f.querySelectorAll('[data-s]').forEach(function(b){ b.onclick=function(){ f.obs.value=(f.obs.value?f.obs.value.replace(/\s*$/,'')+'\n':'')+'• '+b.dataset.s+'. '; f.obs.focus(); }; }); }});
+};
+
+/* ================= Líder ================= */
+function viewTime(){ setTop('Meu time','Acompanhe os PDIs dos seus liderados e aprove os planos de ação.',[{act:'tf',v:'pend',t:'Aprovações pendentes',cor:'orange',ic:SVG.check},{act:'tf',v:'sem',t:'Quem está sem PDI',cor:'purple',ic:SVG.user}]); loading('Carregando o time…'); run('meuTime').then(function(t){ S.time=t; renderTime(); }).catch(fail); }
+function renderTime(){
+  var t=S.time, f=S.timeFiltro;
+  var com=t.filter(function(l){return l.temPDI;}).length, pend=t.reduce(function(s,l){return s+l.pendentes;},0), atr=t.reduce(function(s,l){return s+l.atrasadas;},0);
+  var h='<div class="kpis"><div class="card kpi k-brand"><span class="l">Liderados</span><span class="v num">'+t.length+'</span><span class="s">no seu time</span></div>'+
+    '<div class="card kpi k-ok"><span class="l">Com PDI</span><span class="v num">'+com+'</span><span class="s">'+(t.length-com)+' sem PDI</span></div>'+
+    '<div class="card kpi k-warn"><span class="l">Aguardando sua aprovação</span><span class="v num">'+pend+'</span><span class="s">planos de ação</span></div>'+
+    '<div class="card kpi k-bad"><span class="l">Ações atrasadas</span><span class="v num">'+atr+'</span><span class="s">prazo vencido</span></div></div>';
+  var fs=[['todos','Todos'],['pend','Aguardando aprovação'],['sem','Sem PDI'],['atr','Com atraso']];
+  h+='<div class="filters"><div class="seg" role="group" aria-label="Filtro">'+fs.map(function(x){return '<button data-act="tf" data-v="'+x[0]+'" class="'+(f===x[0]?'on':'')+'">'+x[1]+'</button>';}).join('')+'</div></div>';
+  var rows=t.filter(function(l){ return f==='todos'||(f==='pend'&&l.pendentes)||(f==='sem'&&!l.temPDI)||(f==='atr'&&l.atrasadas); });
+  if(!t.length) h+='<div class="card sec"><p class="empty-txt">Ninguém tem você como gestor imediato no cadastro. Se estiver errado, avise o RH.</p></div>';
+  else h+='<div class="tbl-wrap"><table><thead><tr><th>Colaborador</th><th>Status do PDI</th><th>Progresso</th><th class="r">Ações</th><th class="r">Aguardando você</th><th class="r">Atrasadas</th><th>Atualizado</th></tr></thead><tbody>'+
+    (rows.length?rows.map(function(l){ return '<tr class="click" data-act="abrir" data-email="'+esc(l.email)+'" data-modo="lider" tabindex="0"><td><b>'+esc(l.nome)+'</b><span class="sub">'+esc(l.cargo||'')+'</span></td><td>'+pillPDI(l.status)+'</td><td style="min-width:150px">'+(l.temPDI?progHTML(l.progresso):'<span class="hint">—</span>')+'</td><td class="r num">'+(l.temPDI?l.concluidas+'/'+l.total:'—')+'</td><td class="r num">'+(l.pendentes?'<span class="pill warn">'+l.pendentes+'</span>':'—')+'</td><td class="r num">'+(l.atrasadas?'<span class="tag-late">'+l.atrasadas+'</span>':'—')+'</td><td class="num">'+fmtDH(l.atualizadoEm)+'</td></tr>'; }).join(''):'<tr><td colspan="7" class="empty-txt">Ninguém neste filtro.</td></tr>')+'</tbody></table></div>';
+  setView(h);
+}
+ACT.tf=function(el){ S.timeFiltro=el.dataset.v; if(S.view!=='time'||!S.time) return go('time'); renderTime(); };
+ACT.abrir=function(el){ go('pessoa',{pessoa:el.dataset.email, modo:el.dataset.modo}); };
+
+/* ================= RH ================= */
+function viewRH(){ setTop('Painel RH','Visão geral dos PDIs: quem tem, quem não tem e a conclusão.',[{act:'csvRH',t:'Exportar CSV',cor:'blue',ic:SVG.doc},{act:'go',v:'colab',t:'Colaboradores',cor:'purple',ic:SVG.user}]); loading('Consolidando os PDIs…'); run('painelRH').then(function(d){ S.rh=d; renderRH(); }).catch(fail); }
+function renderRH(){
+  var d=S.rh, k=d.kpis, pct=function(a,b){return b?Math.round(a*100/b):0;};
+  var h='<div class="kpis">'+
+    '<div class="card kpi k-ok"><span class="l">Com PDI</span><span class="v num">'+k.comPDI+'</span><span class="s num">'+pct(k.comPDI,k.colaboradores)+'% de '+k.colaboradores+' ativos</span></div>'+
+    '<div class="card kpi"><span class="l">Sem PDI</span><span class="v num">'+k.semPDI+'</span><span class="s">ainda não começaram</span></div>'+
+    '<div class="card kpi k-info"><span class="l">Conclusão média</span><span class="v num">'+k.progressoMedio+'%</span><span class="s num">'+k.acoesConcluidas+' de '+k.acoes+' ações concluídas</span></div>'+
+    '<div class="card kpi k-ok"><span class="l">PDIs concluídos</span><span class="v num">'+k.concluidos+'</span><span class="s">todas as ações entregues</span></div>'+
+    '<div class="card kpi k-warn"><span class="l">Aguardando líder</span><span class="v num">'+k.aguardando+'</span><span class="s num">'+k.ajustes+' com ajustes solicitados</span></div>'+
+    '<div class="card kpi k-bad"><span class="l">Ações atrasadas</span><span class="v num">'+k.atrasadas+'</span><span class="s">prazo vencido</span></div></div>';
+  // distribuição
+  var ordem=['Sem PDI','Em elaboração','Aguardando aprovação','Ajustes solicitados','Em andamento','Concluído'];
+  var acc=0, stops=ordem.filter(function(s){return d.porStatus[s];}).map(function(s){ var a=acc; acc+=d.porStatus[s]*100/k.colaboradores; return ST_COR[s]+' '+a+'% '+acc+'%'; }).join(',');
+  h+='<section class="card sec"><div class="sec-h"><span class="eyebrow">'+SVG.clock+'Situação dos PDIs</span><span class="sp"></span><span class="hint num">'+k.ferramenta+' na ferramenta · '+k.excel+' via Excel</span></div><div class="dist"><div><div class="donut" role="img" aria-label="Distribuição dos colaboradores por status do PDI" style="background:conic-gradient('+(stops||'var(--gray-soft) 0 100%')+')"><div class="c"><small>Total</small><b class="num">'+k.colaboradores+'</b><small>pessoas</small></div></div><div class="dist-cap">Ref.: '+fmtDH(d.geradoEm)+'</div></div><div class="legend-tiles">'+
+    ordem.map(function(s){ var n=d.porStatus[s]||0; return '<div class="lt"><div class="l"><i style="background:color-mix(in srgb,'+ST_COR[s]+' 16%,transparent) radial-gradient(circle,'+ST_COR[s]+' 3px,transparent 3.5px)"></i>'+s+'</div><b class="num">'+n+'</b><span class="num" style="color:'+ST_COR[s]+'">'+(k.colaboradores?Math.round(n*100/k.colaboradores):0)+'% do total</span></div>'; }).join('')+'</div></div></section>';
+  // por área
+  h+='<section class="card sec"><div class="sec-h"><h2>Por área</h2></div><div class="tbl-wrap" style="box-shadow:none"><table><thead><tr><th>Área/Time</th><th class="r">Pessoas</th><th class="r">Com PDI</th><th style="min-width:160px">Cobertura</th><th style="min-width:160px">Conclusão média</th><th class="r">Concluídos</th><th class="r">Atrasadas</th></tr></thead><tbody>'+
+    d.areas.map(function(a){ return '<tr class="click" data-act="rhArea" data-v="'+esc(a.area)+'"><td><b>'+esc(a.area)+'</b></td><td class="r num">'+a.colaboradores+'</td><td class="r num">'+a.comPDI+'</td><td>'+progHTML(pct(a.comPDI,a.colaboradores))+'</td><td>'+(a.comPDI?progHTML(a.progressoMedio):'<span class="hint">—</span>')+'</td><td class="r num">'+a.concluidos+'</td><td class="r num">'+(a.atrasadas?'<span class="tag-late">'+a.atrasadas+'</span>':'—')+'</td></tr>'; }).join('')+'</tbody></table></div></section>';
+  // lista
+  var F=S.rhF, areas=uniq(d.linhas.map(function(l){return l.area;})), gestores=uniq(d.linhas.map(function(l){return l.gestorNome;}));
+  h+='<section class="card sec"><div class="sec-h"><h2>Todos os colaboradores</h2><span class="sp"></span><button class="btn sm" data-act="csvRH">Exportar CSV</button></div>'+
+    '<div class="filters"><input id="rhQ" type="search" placeholder="Buscar por nome ou cargo" value="'+esc(F.q)+'" aria-label="Buscar">'+
+    selF('rhArea','Todas as áreas',areas,F.area)+selF('rhGestor','Todos os gestores',gestores,F.gestor)+selF('rhStatus','Todos os status',ordem,F.status)+'</div><div id="rhTbl"></div></section>';
+  setView(h);
+  renderRHTabela();
+  $('#rhQ').oninput=function(e){ S.rhF.q=e.target.value; renderRHTabela(); };
+  ['rhArea','rhGestor','rhStatus'].forEach(function(id){ $('#'+id).onchange=function(e){ S.rhF[{rhArea:'area',rhGestor:'gestor',rhStatus:'status'}[id]]=e.target.value; renderRHTabela(); }; });
+}
+function uniq(a){ return a.filter(function(x,i){return x&&a.indexOf(x)===i;}).sort(); }
+function selF(id,todos,ops,val){ return '<select id="'+id+'" aria-label="'+esc(todos)+'"><option value="">'+esc(todos)+'</option>'+ops.map(function(o){return '<option'+(o===val?' selected':'')+'>'+esc(o)+'</option>';}).join('')+'</select>'; }
+function rhFiltradas(){ var F=S.rhF, q=norm(F.q); return S.rh.linhas.filter(function(l){ return (!q||norm(l.nome+' '+l.cargo+' '+l.email).indexOf(q)>=0)&&(!F.area||l.area===F.area)&&(!F.gestor||l.gestorNome===F.gestor)&&(!F.status||l.status===F.status); }); }
+function renderRHTabela(){
+  var rows=rhFiltradas();
+  $('#rhTbl').innerHTML='<p class="hint num" style="margin:0 0 8px">'+rows.length+' de '+S.rh.linhas.length+' colaboradores</p><div class="tbl-wrap" style="box-shadow:none"><table><thead><tr><th>Colaborador</th><th>Área</th><th>Gestor</th><th>Status</th><th>Origem</th><th style="min-width:140px">Conclusão</th><th class="r">Ações</th><th class="r">Atrasadas</th><th>Vigência até</th></tr></thead><tbody>'+
+   (rows.length?rows.map(function(l){ return '<tr class="click" data-act="abrir" data-email="'+esc(l.email)+'" data-modo="rh" tabindex="0"><td><b>'+esc(l.nome)+'</b><span class="sub">'+esc(l.cargo)+'</span></td><td>'+esc(l.area)+'</td><td>'+esc(l.gestorNome)+'</td><td>'+pillPDI(l.status)+'</td><td>'+(l.origem?'<span class="chip">'+(l.origem==='Excel'?'Excel':'Ferramenta')+'</span>':'—')+'</td><td>'+(l.temPDI?progHTML(l.progresso):'<span class="hint">—</span>')+'</td><td class="r num">'+(l.temPDI?l.concluidas+'/'+l.total:'—')+'</td><td class="r num">'+(l.atrasadas?'<span class="tag-late">'+l.atrasadas+'</span>':'—')+'</td><td class="num">'+(l.fim?fmtD(l.fim):'—')+'</td></tr>'; }).join(''):'<tr><td colspan="9" class="empty-txt">Ninguém com esses filtros.</td></tr>')+'</tbody></table></div>';
+}
+ACT.rhArea=function(el){ S.rhF.area=el.dataset.v; $('#rhArea').value=el.dataset.v; renderRHTabela(); $('#rhTbl').scrollIntoView({behavior:'smooth',block:'start'}); };
+ACT.csvRH=function(){
+  var cols=[['nome','Colaborador'],['email','E-mail'],['cargo','Cargo'],['area','Área'],['gestorNome','Gestor'],['status','Status do PDI'],['origem','Origem'],['progresso','Conclusão %'],['concluidas','Ações concluídas'],['total','Ações'],['pendentes','Aguardando líder'],['reprovadas','Reprovadas'],['atrasadas','Atrasadas'],['inicio','Início'],['fim','Validade'],['atualizadoEm','Atualizado em']];
+  var q=function(v){ v=String(v==null?'':v); return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+  var csv='\uFEFF'+cols.map(function(c){return c[1];}).join(';')+'\n'+rhFiltradas().map(function(l){ return cols.map(function(c){return q(l[c[0]]);}).join(';'); }).join('\n');
+  baixar(new Blob([csv],{type:'text/csv;charset=utf-8'}),'PDIs - visao RH - '+hojeISO()+'.csv');
+};
+function baixar(blob,nome){ var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=nome; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },500); if(DEMO) toast('Arquivo gerado. Na prévia publicada o navegador pode bloquear downloads; no app ele baixa normalmente.'); }
+
+/* ================= Colaboradores (RH) ================= */
+function viewColab(){ setTop('Colaboradores','Cadastro que define quem é líder de quem e quem deve ter PDI.'); loading('Carregando cadastro…'); run('colaboradores').then(function(l){ S.colab=l; renderColab(); }).catch(fail); }
+function renderColab(){
+  var l=S.colab;
+  var h='<section class="card sec"><div class="sec-h"><h2>'+l.length+' pessoas cadastradas</h2><span class="sp"></span><button class="btn sm" data-act="modeloLista">Baixar modelo da lista</button><button class="btn sm dark" data-act="impLista">Importar lista (Excel/CSV)</button><button class="btn sm pri" data-act="edColab">+ Novo colaborador</button>'+
+    '<p>O gestor de cada pessoa é quem aprova o PDI dela. Perfil RH dá acesso ao Painel RH e a este cadastro.</p></div><input type="file" id="fLista" accept=".xlsx,.xls,.csv" hidden>'+
+    '<div class="filters"><input id="cQ" type="search" placeholder="Buscar por nome, e-mail ou área" aria-label="Buscar"></div><div id="cTbl"></div></section>';
+  setView(h);
+  var draw=function(){ var q=norm($('#cQ').value); var rows=l.filter(function(u){ return !q||norm(u.nome+' '+u.email+' '+u.area+' '+u.cargo).indexOf(q)>=0; });
+    $('#cTbl').innerHTML='<div class="tbl-wrap" style="box-shadow:none"><table><thead><tr><th>Nome</th><th>Área/Time</th><th>Gestor</th><th>Perfil</th><th>Ativo</th><th>PDI</th><th></th></tr></thead><tbody>'+rows.map(function(u){ return '<tr><td><b>'+esc(u.nome)+'</b><span class="sub">'+esc(u.email)+(u.cargo?' · '+esc(u.cargo):'')+'</span></td><td>'+esc(u.area||'—')+'</td><td>'+esc(u.gestorNome||'—')+'</td><td>'+esc(u.perfil)+'</td><td>'+(u.ativo==='Não'?pill('Inativo'):pill('Ativo','ok'))+'</td><td>'+(u.temPDI?pill('Tem PDI','ok'):pill('Sem PDI'))+'</td><td class="r"><button class="btn sm" data-act="edColab" data-email="'+esc(u.email)+'">Editar</button></td></tr>'; }).join('')+'</tbody></table></div>'; };
+  draw(); $('#cQ').oninput=draw;
+  $('#fLista').onchange=function(e){ var f=e.target.files[0]; if(f) lerLista(f); e.target.value=''; };
+}
+ACT.edColab=function(el){
+  var u=(el.dataset.email&&S.colab.filter(function(x){return x.email===el.dataset.email;})[0])||{perfil:'Colaborador',ativo:'Sim'};
+  var gest=[['','— sem gestor —']].concat(S.colab.filter(function(x){return x.email!==u.email && x.ativo!=='Não';}).map(function(x){return [x.email,x.nome+' ('+x.email+')'];}));
+  modal(u.email?'Editar colaborador':'Novo colaborador', fInput('nome','Nome',u.nome,'text','required')+fInput('email','E-mail Google (login)',u.email,'email','required'+(u.email?' readonly':''))+'<div class="grid2">'+fInput('cargo','Cargo',u.cargo)+fInput('area','Área/Time',u.area,'text','list="dlAreas"')+'</div><datalist id="dlAreas">'+uniq(S.colab.map(function(x){return x.area;})).map(function(a){return '<option value="'+esc(a)+'">';}).join('')+'</datalist>'+
+    fSel('gestor','Gestor imediato (aprova o PDI)',u.gestor||'',gest)+'<div class="grid2">'+fSel('perfil','Perfil',u.perfil,['Colaborador','Líder','RH'])+fSel('ativo','Situação',u.ativo||'Sim',[['Sim','Ativo'],['Não','Inativo (desligado)']])+'</div>',
+  {onOk:function(fd){ return run('salvarColaborador',{emailOriginal:u.email||'',nome:fd.get('nome'),email:fd.get('email'),cargo:fd.get('cargo'),area:fd.get('area'),gestor:fd.get('gestor'),perfil:fd.get('perfil'),ativo:fd.get('ativo')}).then(function(l){ S.colab=l; renderColab(); toast('Cadastro salvo.'); refreshCtx(); }); }});
+};
+ACT.impLista=function(){ $('#fLista').click(); };
+ACT.modeloLista=function(){ ensureXLSX().then(function(){ var ws=XLSX.utils.aoa_to_sheet([['Nome','E-mail','Cargo','Área/Time','Gestor (e-mail)','Perfil','Ativo'],['Maria Exemplo','maria@escavador.com','Analista','Financeiro','gestor@escavador.com','Colaborador','Sim']]); ws['!cols']=[{wch:26},{wch:30},{wch:22},{wch:18},{wch:30},{wch:12},{wch:8}]; var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Colaboradores'); XLSX.writeFile(wb,'Modelo - lista de colaboradores.xlsx'); }).catch(function(e){toast(errMsg(e),true);}); };
+function lerLista(file){
+  ensureXLSX().then(function(){ return file.arrayBuffer(); }).then(function(buf){
+    var wb=XLSX.read(buf,{type:'array'}), rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});
+    var hi=rows.findIndex(function(r){ return r.some(function(c){return /e-?mail/.test(norm(c));}); }); if(hi<0) throw new Error('Não achei a coluna E-mail. Use o modelo da lista.');
+    var H=rows[hi].map(norm), col=function(re){ return H.findIndex(function(h){return re.test(h);}); };
+    var c={nome:col(/^nome/),email:col(/e-?mail/),cargo:col(/cargo/),area:col(/area|time/),gestor:col(/gestor|lider/),perfil:col(/perfil/),ativo:col(/ativo|situa/)};
+    var lista=rows.slice(hi+1).filter(function(r){return String(r[c.email]||'').trim();}).map(function(r){ var o={}; for(var k in c) o[k]=c[k]>=0?String(r[c[k]]||'').trim():''; if(!o.ativo) o.ativo='Sim'; return o; });
+    if(!lista.length) throw new Error('A planilha não tem linhas com e-mail.');
+    modal('Importar lista de colaboradores','<p><b class="num">'+lista.length+'</b> pessoas encontradas em <b>'+esc(file.name)+'</b>. Quem já existe (mesmo e-mail) é atualizado.</p><div class="tbl-wrap"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Área</th><th>Gestor</th><th>Perfil</th></tr></thead><tbody>'+lista.slice(0,8).map(function(u){return '<tr><td>'+esc(u.nome)+'</td><td>'+esc(u.email)+'</td><td>'+esc(u.area)+'</td><td>'+esc(u.gestor)+'</td><td>'+esc(u.perfil||'Colaborador')+'</td></tr>';}).join('')+'</tbody></table></div>'+(lista.length>8?'<p class="hint">… e mais '+(lista.length-8)+'.</p>':''),
+    {ok:'Importar '+lista.length,onOk:function(){ return run('importarColaboradores',lista).then(function(r){ S.colab=r.lista; renderColab(); refreshCtx(); toast(r.novos+' novos · '+r.atualizados+' atualizados'+(r.erros.length?' · '+r.erros.length+' com erro':'')); if(r.erros.length) setTimeout(function(){ toast(r.erros.slice(0,3).join(' | '),true); },3300); }); }});
+  }).catch(function(e){ toast(errMsg(e),true); });
+}
+
+/* ================= Importar Excel do PDI ================= */
+function viewImportar(){
+  setTop('Importar Excel','Suba o modelo PDI.xlsx preenchido: o sistema lê as 4 abas e monta o PDI.',[{act:'modeloBranco',t:'Baixar modelo',cor:'green',ic:SVG.doc}]);
+  S.imp=null;
+  var p0 = S.ctx.isRH ? run('listaPessoas').then(function(l){ S.pessoas=l; }) : Promise.resolve();
+  loading('Preparando…');
+  p0.then(renderImportar).catch(fail);
+}
+function renderImportar(){
+  var rh=S.ctx.isRH, me=S.ctx.me;
+  var alvoSel = rh ? '<div class="f" style="max-width:420px"><label for="impAlvo">PDI de</label><select id="impAlvo">'+S.pessoas.map(function(p){ return '<option value="'+esc(p.email)+'"'+(p.email===me.email?' selected':'')+'>'+esc(p.nome)+(p.temPDI?' · já tem PDI':'')+'</option>'; }).join('')+'</select><small>Como RH, você pode subir o Excel de qualquer colaborador. Ao ler o arquivo, tento achar a pessoa pelo nome.</small></div>' : '<p class="hint">O arquivo será importado no <b>seu</b> PDI ('+esc(me.nome)+').</p>';
+  var h='<section class="card sec"><div class="sec-h"><h2>Como funciona</h2><span class="sp"></span><button class="btn sm" data-act="modeloBranco">Baixar modelo em branco</button></div><div class="steps">'+
+    '<div><b>1. Preencha o modelo</b>Identificação, Autoavaliação, Objetivo de Carreira e Plano de Ação, como no PDI.xlsx.</div>'+
+    '<div><b>2. Suba o arquivo aqui</b>A leitura acontece no navegador. Você confere tudo antes de gravar.</div>'+
+    '<div><b>3. Confirme e envie</b>As ações vão para aprovação do líder, igual a um PDI montado na ferramenta.</div></div>'+alvoSel+
+    '<label class="drop" id="drop" for="fPDI"><b>Arraste o Excel aqui ou clique para escolher</b><span class="hint">.xlsx ou .xls no formato do modelo PDI</span></label><input type="file" id="fPDI" accept=".xlsx,.xls" hidden></section><div id="impPrev"></div>';
+  setView(h);
+  var dz=$('#drop');
+  dz.addEventListener('dragover',function(e){ e.preventDefault(); dz.classList.add('over'); });
+  dz.addEventListener('dragleave',function(){ dz.classList.remove('over'); });
+  dz.addEventListener('drop',function(e){ e.preventDefault(); dz.classList.remove('over'); if(e.dataTransfer.files[0]) lerPDI(e.dataTransfer.files[0]); });
+  $('#fPDI').onchange=function(e){ if(e.target.files[0]) lerPDI(e.target.files[0]); e.target.value=''; };
+}
+function lerPDI(file){
+  $('#impPrev').innerHTML='<div class="loading">Lendo '+esc(file.name)+'…</div>';
+  ensureXLSX().then(function(){ return file.arrayBuffer(); }).then(function(buf){
+    var wb=XLSX.read(buf,{type:'array',cellDates:true});
+    var d=parsePDIWorkbook(wb); d.arquivo=file.name; S.imp=d;
+    if(S.ctx.isRH && d.ident.nome){ var n=norm(d.ident.nome), m=S.pessoas.filter(function(p){ return norm(p.nome)===n; })[0] || S.pessoas.filter(function(p){ return norm(p.nome).indexOf(n.split(' ')[0])===0 && n.indexOf(norm(p.nome).split(' ').slice(-1)[0])>=0; })[0]; if(m) $('#impAlvo').value=m.email; }
+    renderPrev();
+  }).catch(function(e){ $('#impPrev').innerHTML='<div class="card sec"><div class="callout bad"><div class="sp"><b>Não consegui ler o arquivo.</b> '+esc(errMsg(e))+'</div></div></div>'; });
+}
+function renderPrev(){
+  var d=S.imp, alvo=S.ctx.isRH?$('#impAlvo').value:S.ctx.me.email;
+  var temPDI = S.ctx.isRH ? (S.pessoas.filter(function(p){return p.email===alvo;})[0]||{}).temPDI : S.ctx.temPDI;
+  var pf=d.auto.filter(function(x){return x.tipo==='Ponto forte';}).length, ad=d.auto.length-pf;
+  var h='<section class="card sec"><div class="sec-h"><h2>Conferência · '+esc(d.arquivo)+'</h2></div>';
+  if(d.avisos.length) h+='<div class="callout warn"><div class="sp"><b>Atenção:</b><br>'+d.avisos.map(esc).join('<br>')+'</div></div>';
+  h+='<dl class="dl"><div><dt>Nome no arquivo</dt><dd>'+esc(d.ident.nome||'—')+'</dd></div><div><dt>Cargo</dt><dd>'+esc(d.ident.cargo||'—')+'</dd></div><div><dt>Gestor no arquivo</dt><dd>'+esc(d.ident.gestorTexto||'—')+'</dd></div><div><dt>Início</dt><dd class="num">'+fmtD(d.ident.inicio)+'</dd></div><div><dt>Validade</dt><dd class="num">'+fmtD(d.ident.fim)+(d.ident.fimTexto?' <span class="hint">('+esc(d.ident.fimTexto)+')</span>':'')+'</dd></div>'+
+     '<div><dt>Autoavaliação</dt><dd class="num">'+pf+' pontos fortes · '+ad+' áreas</dd></div><div><dt>Objetivos</dt><dd>'+(d.curtoPrazo?'Curto ✓':'Curto —')+' · '+(d.medioPrazo?'Médio ✓':'Médio —')+'</dd></div><div><dt>Plano de ação</dt><dd class="num">'+d.acoes.length+' ações</dd></div></dl>';
+  if(d.acoes.length) h+='<div class="tbl-wrap" style="box-shadow:none"><table><thead><tr><th>O que desenvolver</th><th>Como</th><th>Início</th><th>Prazo</th><th>Status</th></tr></thead><tbody>'+d.acoes.map(function(a){ return '<tr><td><b>'+esc(a.oque)+'</b></td><td>'+esc(a.como)+'</td><td class="num">'+fmtD(a.inicio)+'</td><td class="num">'+(a.prazo?fmtD(a.prazo):'<span class="tag-late">sem prazo</span>')+(a.prazoTexto?' <span class="hint">('+esc(a.prazoTexto)+')</span>':'')+'</td><td>'+pill(a.status,ST_ACAO[a.status])+'</td></tr>'; }).join('')+'</tbody></table></div>';
+  h+='<div class="fs"><div class="row">'+(temPDI?'<label><input type="radio" name="modo" value="substituir" checked> Substituir o plano de ação atual</label><label><input type="radio" name="modo" value="adicionar"> Adicionar às ações existentes</label>':'<span class="hint">Esta pessoa ainda não tem PDI: um novo será criado com origem “Excel”.</span>')+'</div>'+
+     '<label><input type="checkbox" id="impEnviar" checked> Enviar as ações para aprovação do líder agora</label><label id="lblConf" hidden><input type="checkbox" id="impConf"> Confirmo substituir ações que o líder já aprovou</label></div>'+
+     '<div class="row"><button class="btn pri" data-act="confirmarImp"'+(d.acoes.length||d.auto.length?'':' disabled')+'>Importar PDI</button><button class="btn ghost" data-act="go" data-v="importar">Escolher outro arquivo</button></div></section>';
+  $('#impPrev').innerHTML=h;
+  if($('#impAlvo')) $('#impAlvo').onchange=renderPrev;
+}
+ACT.confirmarImp=function(el){
+  var d=S.imp, alvo=S.ctx.isRH?$('#impAlvo').value:S.ctx.me.email, modo=(document.querySelector('input[name=modo]:checked')||{}).value||'substituir';
+  var semPrazo=d.acoes.filter(function(a){return !a.prazo;});
+  if(semPrazo.length && $('#impEnviar').checked){ toast(semPrazo.length+' ação(ões) sem prazo. Corrija no Excel ou desmarque o envio para ajustar depois na ferramenta.',true); return; }
+  el.disabled=true;
+  run('importarExcel',{email:alvo,ident:d.ident,auto:d.auto,curtoPrazo:d.curtoPrazo,medioPrazo:d.medioPrazo,acoes:d.acoes.map(function(a){ if(!a.prazo) a.prazo=addMeses(a.inicio,3); return a; }),modo:modo,enviar:$('#impEnviar').checked,confirmarAprovadas:$('#impConf')&&$('#impConf').checked,arquivo:d.arquivo})
+  .then(function(r){ toast('PDI importado do Excel.'); refreshCtx(); if(alvo===S.ctx.me.email){ S.view='meu'; S.modo='dono'; renderNav(); S.pdiRes=r; setTop('Olá, '+primeiro(S.ctx.me.nome)+'!','Aqui está o seu Plano de Desenvolvimento Individual.',TILES_MEU()); renderPDI(); } else go('pessoa',{pessoa:alvo,modo:'rh'}); })
+  .catch(function(e){ el.disabled=false; var m=errMsg(e); if(/aprovadas/.test(m)){ $('#lblConf').hidden=false; } toast(m,true); });
+};
+
+/* ---------- leitura do modelo PDI.xlsx ---------- */
+function cellISO(v){
+  if(v==null||v==='') return '';
+  if(v instanceof Date){ return isoLocal(new Date(v.getTime()+12*3600000)); }
+  if(typeof v==='number' && v>20000 && v<80000){ var o=XLSX.SSF.parse_date_code(v); return o.y+'-'+pad(o.m)+'-'+pad(o.d); }
+  var s=String(v).trim(), m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})$/);
+  if(m){ var y=+m[3]; if(y<100) y+=2000; return y+'-'+pad(+m[2])+'-'+pad(+m[1]); }
+  m=s.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m) return m[1]+'-'+m[2]+'-'+m[3];
+  return '';
+}
+function somaPeriodo(base,txt){
+  var m=norm(txt).match(/(\d+)\s*(dia|semana|mes|meses|ano)/); if(!m) return '';
+  var d=new Date((base||hojeISO())+'T12:00:00'), n=+m[1];
+  if(m[2]==='dia') d.setDate(d.getDate()+n); else if(m[2]==='semana') d.setDate(d.getDate()+7*n); else if(m[2]==='ano') d.setFullYear(d.getFullYear()+n); else d.setMonth(d.getMonth()+n);
+  return isoLocal(d);
+}
+function txt(v){ if(v==null) return ''; if(v instanceof Date) return fmtD(cellISO(v)); var s=String(v).trim(); return /^ex\s*:/i.test(s)?'':s; }
+function mapStatus(v){ var s=norm(v); if(/nao\s*inici/.test(s)) return 'Não iniciado'; if(/conclu|finaliz/.test(s)) return 'Concluído'; if(/cancel/.test(s)) return 'Cancelado'; if(/andamento|iniciad|fazendo|curso/.test(s)) return 'Em andamento'; return 'Não iniciado'; }
+function parsePDIWorkbook(wb){
+  var aba=function(k){ var n=wb.SheetNames.filter(function(s){return norm(s).indexOf(k)>=0;})[0]; return n?XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:null}):null; };
+  var out={ident:{},auto:[],curtoPrazo:'',medioPrazo:'',acoes:[],avisos:[]};
+  var I=aba('identifica'), A=aba('autoavalia'), O=aba('objetivo'), P=aba('plano');
+  if(!I&&!A&&!O&&!P) throw new Error('Este arquivo não segue o modelo de PDI (não encontrei as abas Identificação, Autoavaliação, Objetivo de Carreira e Plano de Ação).');
+  (I||[]).forEach(function(r){ var l=norm(r[0]), v=r[1];
+    if(/^nome/.test(l)) out.ident.nome=txt(v); else if(/^cargo/.test(l)) out.ident.cargo=txt(v); else if(/gestor/.test(l)) out.ident.gestorTexto=txt(v);
+    else if(/data de inicio/.test(l)) out.ident.inicio=cellISO(v); else if(/validade/.test(l)){ out.ident.fim=cellISO(v); if(!out.ident.fim && v){ out.ident.fimTexto=String(v); out.ident.fim=''; out.ident._fimTxt=String(v); } } });
+  if(!out.ident.inicio) out.ident.inicio='';
+  if(out.ident._fimTxt){ out.ident.fim=somaPeriodo(out.ident.inicio||hojeISO(),out.ident._fimTxt); if(!out.ident.fim) out.avisos.push('Período de validade "'+out.ident._fimTxt+'" não reconhecido: ajuste depois em Identificação.'); delete out.ident._fimTxt; }
+  if(!out.ident.nome) out.avisos.push('Nome do colaborador vazio na aba Identificação.');
+  var cur=null;
+  (A||[]).forEach(function(r){ var l=norm(r[0]), v=txt(r[1])||txt(r[2]), m;
+    if((m=l.match(/^ponto forte\s*(\d+)/))){ cur={tipo:'Ponto forte',ordem:+m[1],titulo:v,descricao:''}; out.auto.push(cur); }
+    else if((m=l.match(/^area de desenvolvimento\s*(\d+)/))){ cur={tipo:'Área de desenvolvimento',ordem:+m[1],titulo:v,descricao:''}; out.auto.push(cur); }
+    else if(cur && /como se manifesta|por que e importante/.test(l)) cur.descricao=v; });
+  out.auto=out.auto.filter(function(x){return x.titulo||x.descricao;});
+  (O||[]).forEach(function(r){ var l=norm(r[0]); if(/curto/.test(l)) out.curtoPrazo=txt(r[1]); else if(/medio/.test(l)) out.medioPrazo=txt(r[1]); });
+  if(P){
+    var hi=P.findIndex(function(r){ return r&&norm(r[0]).indexOf('o que')===0; }); if(hi<0) hi=0;
+    var H=(P[hi]||[]).map(norm), ci=function(re,def){ var i=H.findIndex(function(h){return re.test(h);}); return i<0?def:i; };
+    var c={oque:ci(/^o que/,0),como:ci(/^como/,1),suporte:ci(/suporte/,2),inicio:ci(/inicio/,3),prazo:ci(/^prazo/,4),indicador:ci(/indicador/,5),status:ci(/status/,6),obs:ci(/observa/,7)};
+    P.slice(hi+1).forEach(function(r,i){ if(!r) return; var oque=txt(r[c.oque]); if(!oque) return;
+      var ini=cellISO(r[c.inicio]), pr=cellISO(r[c.prazo]), prT='';
+      if(!ini && r[c.inicio]) out.avisos.push('Linha '+(hi+i+2)+': data de início "'+r[c.inicio]+'" não é uma data; usei hoje.');
+      if(!ini) ini=hojeISO();
+      if(!pr && r[c.prazo]!=null && r[c.prazo]!==''){ prT=String(r[c.prazo]); pr=somaPeriodo(ini,prT); if(!pr) out.avisos.push('Linha '+(hi+i+2)+': prazo "'+prT+'" não reconhecido.'); }
+      var st=mapStatus(r[c.status]);
+      out.acoes.push({oque:oque,como:txt(r[c.como]),suporte:txt(r[c.suporte]),inicio:ini,prazo:pr,prazoTexto:prT,indicador:txt(r[c.indicador]),status:st,progresso:st==='Concluído'?100:0,obs:txt(r[c.obs])});
+    });
+  }
+  if(!out.acoes.length) out.avisos.push('Nenhuma ação encontrada na aba 4. Plano de Ação (linhas iniciadas por "Ex:" são ignoradas).');
+  return out;
+}
+
+/* ---------- gerar Excel no mesmo layout do modelo ---------- */
+var INTRO1='Este documento é um modelo de PDI para ser preenchido pelo colaborador e validado em conjunto com o gestor. Ele visa guiar o desenvolvimento profissional, alinhando as aspirações individuais com as necessidades da organização.';
+var INTRO2='Nesta seção, você deve refletir sobre suas competências e habilidades atuais, identificando pontos fortes e áreas que necessitam de desenvolvimento. Utilize como base a avaliação 360º, feedbacks que já recebeu e autopercepção.';
+var INTRO3='Quais são seus objetivos de carreira a curto (próximos 6 meses -1 ano e médio prazo (próximos 2-3 anos)? Como o desenvolvimento das áreas identificadas acima pode contribuir para alcançar esses objetivos?';
+function gerarWorkbook(p){
+  var b=!p; p=p||{auto:[],acoes:[]};
+  var wb=XLSX.utils.book_new(), add=function(nome,aoa,cols,merges){ var ws=XLSX.utils.aoa_to_sheet(aoa); ws['!cols']=cols.map(function(w){return {wch:w};}); if(merges) ws['!merges']=merges; XLSX.utils.book_append_sheet(wb,ws,nome); };
+  var dt=function(iso){ return iso?fmtD(iso):''; };
+  add('Atenção',[['IMPORTANTE: FAÇA UMA CÓPIA DESTE ARQUIVO ANTES DE EDITÁ-LO']],[70]);
+  add('1. Identificação',[['Campo','Preenchimento'],[INTRO1,''],['',''],['Nome do colaborador',p.nome||''],['Cargo',p.cargo||''],['Gestor imediato',p.gestorNome||''],['Data de início do PDI',dt(p.inicio)],['Período de validade',dt(p.fim)]],[28,60],[{s:{r:1,c:0},e:{r:2,c:1}}]);
+  var get=function(t,i){ return p.auto.filter(function(x){return x.tipo===t;})[i]||{}; };
+  var A=[['Tipo','Descrição/Exemplo','Descrição/Motivo'],[INTRO2,'',''],['Pontos Fortes','','']], M=[{s:{r:1,c:0},e:{r:1,c:2}},{s:{r:2,c:0},e:{r:2,c:2}}];
+  for(var i=0;i<3;i++){ var x=get('Ponto forte',i); A.push(['Ponto forte '+(i+1), b&&i===0?'Ex: Organização e planejamento':(x.titulo||''),'']); A.push(['Como se manifesta', b&&i===0?'Ex: Mantenho meu fluxo de trabalho extremamente organizado...':(x.descricao||''),'']); }
+  A.push(['Áreas de Desenvolvimento','','']); M.push({s:{r:A.length-1,c:0},e:{r:A.length-1,c:2}});
+  for(i=0;i<3;i++){ x=get('Área de desenvolvimento',i); A.push(['Área de Desenvolvimento '+(i+1), b&&i===0?'Ex: Comunicação assertiva e exposição de ideias':(x.titulo||''),'']); A.push(['Por que é importante', b&&i===0?'Ex: Embora eu domine a parte técnica...':(x.descricao||''),'']); }
+  for(i=3;i<A.length;i++) if(i!==9) M.push({s:{r:i,c:1},e:{r:i,c:2}});
+  add('2. Autoavaliação',A,[28,50,30],M);
+  add('3. Objetivo de Carreira ',[['Prazo','Descrição'],[INTRO3,''],['Curto Prazo (6 meses -1 ano)',p.curtoPrazo||''],['Médio Prazo (2 -3 anos)',p.medioPrazo||'']],[30,80],[{s:{r:1,c:0},e:{r:1,c:1}}]);
+  var P=[['O que desenvolver? (Competência/Habilidade)','Como? (Ações e Recursos)','Suporte do Gestor','Data de início','Prazo','Indicador de Sucesso','Status','Observações']];
+  if(b) P.push(['Ex: Comunicação Assertiva','Ex: Curso online, leitura de livro, praticar em reuniões','Reuniões semanais, indicação de materiais','Quando começo curso, treinamento, leitura....','3 meses','Feedback positivo, maior participação','Em andamento','']);
+  p.acoes.forEach(function(a){ P.push([a.oque,a.como,a.suporte,dt(a.inicio),dt(a.prazo),a.indicador,a.status,a.obs]); });
+  add('4. Plano de Ação',P,[32,40,30,16,14,32,14,30]);
+  return wb;
+}
+ACT.modeloBranco=function(){ ensureXLSX().then(function(){ XLSX.writeFile(gerarWorkbook(null),'PDI.xlsx'); if(DEMO) toast('Modelo gerado. Na prévia publicada o download pode ser bloqueado.'); }).catch(function(e){toast(errMsg(e),true);}); };
+ACT.exportar=function(){ var p=S.pdiRes.pdi; ensureXLSX().then(function(){ XLSX.writeFile(gerarWorkbook(p),'PDI - '+p.nome+'.xlsx'); if(DEMO) toast('Excel gerado. Na prévia publicada o download pode ser bloqueado.'); }).catch(function(e){toast(errMsg(e),true);}); };
+
+/* ---------- SheetJS sob demanda ---------- */
+var xlsxP=null;
+function ensureXLSX(){
+  if(window.XLSX) return Promise.resolve();
+  if(xlsxP) return xlsxP;
+  xlsxP=new Promise(function(res,rej){ var s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; s.onload=function(){res();}; s.onerror=function(){ xlsxP=null; rej(new Error('Não foi possível carregar o leitor de Excel. Verifique a internet e tente de novo.')); }; document.head.appendChild(s); });
+  return xlsxP;
+}
+
+/* ---------------- eventos globais ---------------- */
+document.addEventListener('click',function(e){ var el=e.target.closest('[data-act]'); if(!el) return; var f=ACT[el.dataset.act]; if(f){ e.preventDefault(); f(el); } });
+document.addEventListener('keydown',function(e){ if(e.key==='Enter' && e.target.matches && e.target.matches('tr[data-act]')) ACT[e.target.dataset.act](e.target); });
+
+/* ================= modo demonstração ================= */
+var DEMO_KEY='pdi_demo_db_v1', ME_KEY='pdi_demo_me_v1', memDb=null, memMe='carla.mendes@escavador.com';
+function demoMe(){ try{ return localStorage.getItem(ME_KEY)||memMe; }catch(e){ return memMe; } }
+function demoDb(){ if(memDb) return memDb; try{ var s=localStorage.getItem(DEMO_KEY); if(s){ memDb=JSON.parse(s); return memDb; } }catch(e){} memDb=seed(); return memDb; }
+function demoSave(db){ db._dirty=null; memDb=db; try{ localStorage.setItem(DEMO_KEY,JSON.stringify(db)); }catch(e){} }
+function seed(){
+  var U=function(e,n,c,a,g,p){ return {email:e+'@escavador.com',nome:n,cargo:c,area:a,gestor:g?g+'@escavador.com':'',perfil:p||'Colaborador',ativo:'Sim'}; };
+  var usuarios=[U('ana.ribeiro','Ana Ribeiro','Analista de RH','RH','','RH'),U('bruno.matos','Bruno Matos','Coordenador de Engenharia','Engenharia','','Líder'),
+    U('carla.mendes','Carla Mendes','Desenvolvedora Pleno','Engenharia','bruno.matos'),U('diego.santos','Diego Santos','Analista de Dados','Engenharia','bruno.matos'),
+    U('eva.lima','Eva Lima','Analista de QA','Engenharia','bruno.matos'),U('gabriela.rocha','Gabriela Rocha','Gerente Comercial','Comercial','','Líder'),
+    U('fabio.costa','Fábio Costa','Executivo de Contas','Comercial','gabriela.rocha'),U('igor.alves','Igor Alves','SDR','Comercial','gabriela.rocha'),
+    U('helena.dias','Helena Dias','Analista Financeiro','Financeiro','')];
+  var pdis=[], auto=[], acoes=[], hist=[];
+  function P(id,e,n,c,g,ini,fim,cp,mp,orig){ pdis.push({id:id,email:e+'@escavador.com',nome:n,cargo:c,gestor:g+'@escavador.com',inicio:ini,fim:fim,curtoPrazo:cp,medioPrazo:mp,origem:orig,criadoEm:ini+' 09:00',atualizadoEm:'2026-10-28 16:40',enviadoEm:ini+' 10:00'}); }
+  function AU(pid,t,o,ti,de){ auto.push({pdiId:pid,tipo:t,ordem:String(o),titulo:ti,descricao:de}); }
+  function AC(id,pid,oq,co,su,ini,pr,ind,st,pg,obs,apr,obl,por,em){ acoes.push({id:id,pdiId:pid,oque:oq,como:co,suporte:su,inicio:ini,prazo:pr,prazoTexto:'',indicador:ind,status:st,progresso:String(pg),obs:obs,aprovacao:apr,obsLider:obl||'',avaliadoPor:por?por+'@escavador.com':'',avaliadoEm:em||'',criadoEm:ini+' 09:00',atualizadoEm:'2026-10-28 16:40'}); }
+  function H(d,pid,aut,ev,de){ hist.push({data:d,pdiId:pid,acaoId:'',autor:aut+'@escavador.com',evento:ev,detalhe:de}); }
+  // Carla — na ferramenta, uma ação reprovada
+  P('PCARLA','carla.mendes','Carla Mendes','Desenvolvedora Pleno','bruno.matos','2026-08-01','2027-07-31','Conduzir as cerimônias da squad de Busca e ser a referência em testes automatizados do time.','Chegar a Desenvolvedora Sênior e liderar tecnicamente uma squad.','Ferramenta');
+  AU('PCARLA','Ponto forte',1,'Qualidade técnica e testes','Meus PRs quase não voltam de revisão e sou procurada para dúvidas de testes.');
+  AU('PCARLA','Ponto forte',2,'Organização','Mantenho o board atualizado e entrego dentro da sprint.');
+  AU('PCARLA','Área de desenvolvimento',1,'Comunicação assertiva e exposição de ideias','Domino a parte técnica, mas evito expor opiniões nas reuniões de planejamento.');
+  AU('PCARLA','Área de desenvolvimento',2,'Visão de produto','Preciso entender melhor o impacto das entregas para o cliente.');
+  AC('AC1','PCARLA','Comunicação assertiva','Curso "Comunicação Não Violenta" (Alura), livro "Comunicação Não-Violenta" e conduzir 1 daily por semana.','1:1 quinzenal para feedback sobre as dailies.','2026-08-05','2026-12-05','Conduzir 12 dailies e feedback positivo do time na retro.','Em andamento',60,'Já conduzi 7 dailies.','Aprovado','Ótimo plano. Vou te dar feedback nas nossas 1:1.','bruno.matos','2026-08-06 14:10');
+  AC('AC2','PCARLA','Testes automatizados de ponta a ponta','Montar a suíte Playwright do fluxo de busca e apresentar para o time.','Reservar 10% da sprint para isso.','2026-08-05','2026-10-30','Cobertura e2e do fluxo de busca e 1 apresentação feita.','Concluído',100,'Apresentado na tech talk de 29/10.','Aprovado','','bruno.matos','2026-08-06 14:12');
+  AC('AC3','PCARLA','Visão de produto','Acompanhar entrevistas com clientes.','','2026-09-01','2027-03-01','Participar de entrevistas.','Não iniciado',0,'','Reprovado','• Defina um indicador de sucesso mensurável (quantas entrevistas? o que você vai produzir com elas?).\n• Diga qual suporte você espera de mim: posso te colocar nas entrevistas do time de Produto.','bruno.matos','2026-10-20 11:05');
+  H('2026-08-01 09:00','PCARLA','carla.mendes','PDI criado','na ferramenta'); H('2026-08-01 10:00','PCARLA','carla.mendes','Enviado para aprovação','3 ações para Bruno Matos');
+  H('2026-08-06 14:10','PCARLA','bruno.matos','Ação aprovada','Comunicação assertiva'); H('2026-10-20 11:05','PCARLA','bruno.matos','Ação reprovada','Visão de produto'); H('2026-10-28 16:40','PCARLA','carla.mendes','Andamento atualizado','Comunicação assertiva · Em andamento 50% → Em andamento 60%');
+  // Diego — veio do Excel, aguardando aprovação
+  P('PDIEGO','diego.santos','Diego Santos','Analista de Dados','bruno.matos','2026-10-15','2027-10-14','Automatizar os relatórios mensais de receita.','Evoluir para Engenheiro de Dados.','Excel');
+  AU('PDIEGO','Ponto forte',1,'SQL e modelagem','Monto consultas complexas rapidamente.');
+  AU('PDIEGO','Área de desenvolvimento',1,'Engenharia de dados (pipelines)','Hoje dependo de terceiros para colocar rotinas em produção.');
+  AC('AD1','PDIEGO','Pipelines com Airflow','Curso de Airflow e migrar 1 relatório para pipeline.','Acesso ao ambiente de staging.','2026-10-20','2027-01-20','Relatório de receita rodando sozinho todo mês.','Não iniciado',0,'','Pendente');
+  AC('AD2','PDIEGO','Apresentação de resultados','Apresentar o fechamento de dados na reunião mensal.','Espaço de 10 min na pauta.','2026-11-01','2027-02-01','3 apresentações realizadas.','Não iniciado',0,'','Pendente');
+  H('2026-10-15 09:00','PDIEGO','diego.santos','PDI criado','a partir de planilha Excel'); H('2026-10-15 09:01','PDIEGO','diego.santos','Excel importado','2 ação(ões) · modo substituir · enviado para aprovação · PDI - Diego.xlsx');
+  // Fábio — concluído
+  P('PFABIO','fabio.costa','Fábio Costa','Executivo de Contas','gabriela.rocha','2026-02-01','2026-12-31','Bater 110% da meta no 2º semestre.','Ser Key Account de contas jurídicas.','Ferramenta');
+  AU('PFABIO','Ponto forte',1,'Relacionamento com cliente','NPS das minhas contas é o maior do time.');
+  AU('PFABIO','Área de desenvolvimento',1,'Negociação','Concedo desconto cedo demais.');
+  AC('AF1','PFABIO','Negociação','Treinamento de negociação e role-play mensal com a gestora.','Role-play mensal.','2026-02-10','2026-06-30','Desconto médio abaixo de 8%.','Concluído',100,'Desconto médio fechou em 6,5%.','Aprovado','','gabriela.rocha','2026-02-12 10:00');
+  AC('AF2','PFABIO','Inglês para reuniões','Aulas 2x por semana.','Flexibilidade de horário.','2026-02-10','2026-10-31','Conduzir 1 reunião em inglês.','Concluído',100,'','Aprovado','','gabriela.rocha','2026-02-12 10:02');
+  H('2026-02-01 09:00','PFABIO','fabio.costa','PDI criado','na ferramenta');
+  // Gabriela — em andamento com atraso (gestora sem gestor → aprovado pelo RH no passado)
+  P('PGABI','gabriela.rocha','Gabriela Rocha','Gerente Comercial','','2026-05-01','2027-04-30','Estruturar o playbook comercial.','Diretoria comercial.','Excel');
+  AC('AG1','PGABI','Gestão de pipeline','Implantar revisão semanal de pipeline no CRM.','','2026-05-10','2026-10-15','Forecast com erro abaixo de 10%.','Em andamento',70,'','Aprovado','','ana.ribeiro','2026-05-11 09:00');
+  AC('AG2','PGABI','Feedback para o time','Rodada de 1:1 mensais com roteiro.','','2026-05-10','2027-01-31','1:1 com 100% do time todo mês.','Em andamento',40,'','Aprovado','','ana.ribeiro','2026-05-11 09:00');
+  pdis[pdis.length-1].gestor='';
+  return {usuarios:usuarios,pdis:pdis,auto:auto,acoes:acoes,hist:hist,_dirty:null};
+}
+function renderDemoBar(){
+  var db=demoDb(), me=demoMe();
+  var papel=function(u){ return low(u.perfil)==='rh'?'RH':(db.usuarios.some(function(x){return x.gestor===u.email;})?'Líder':'Liderado'); };
+  var ops=db.usuarios.map(function(u){ return '<option value="'+esc(u.email)+'"'+(u.email===me?' selected':'')+'>'+esc(u.nome)+' · '+papel(u)+'</option>'; }).join('');
+  var b=$('#demoBar'); b.hidden=false;
+  b.innerHTML='<span><b>Demonstração</b> com dados de exemplo, salvos só neste navegador.</span><label>Ver como <select id="demoMe">'+ops+'</select></label><button type="button" id="demoReset">Restaurar exemplo</button>';
+  $('#demoMe').onchange=function(e){ memMe=e.target.value; try{ localStorage.setItem(ME_KEY,memMe); }catch(x){} boot(); };
+  $('#demoReset').onclick=function(){ memDb=seed(); demoSave(memDb); boot(); toast('Dados de exemplo restaurados.'); };
+}
+function low(s){ return String(s||'').toLowerCase(); }
+
+/* ---------------- início ---------------- */
+function boot(){
+  if(DEMO) renderDemoBar();
+  refreshCtx().then(function(){
+    var v = S.ctx.isRH && DEMO && demoMe().indexOf('ana.')===0 ? 'rh' : (S.ctx.isLider && DEMO && /bruno|gabriela/.test(demoMe()) ? 'time' : 'meu');
+    go(v);
+  }).catch(function(e){ setTop('PDI Escavador',''); fail(e); });
+}
+boot();
+})();
+</script>
+</body>
+</html>
